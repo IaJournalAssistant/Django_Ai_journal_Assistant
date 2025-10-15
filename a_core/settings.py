@@ -103,8 +103,12 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'DjangoProject',       # 👈 name of the DB you created in pgAdmin
+        'USER': 'postgres',          # 👈 default user (or your pg username)
+        'PASSWORD': 'jihed12345',  # 👈 your pgAdmin password
+        'HOST': 'localhost',         # 👈 or your server IP if remote
+        'PORT': '5434',              # 👈 default PostgreSQL port
     }
 }
 
