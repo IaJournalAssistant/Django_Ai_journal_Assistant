@@ -1,25 +1,30 @@
 {% extends 'layouts/blank.html' %}
+{% load static %}
 
-{% block content %} 
-<div class="container mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-4">📝 My Journal Entries</h1>
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/journal.css' %}">
+
+<div class="journal-container">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">📝 My Journal Entries</h1>
+    <a href="{% url 'journal-create' %}" class="btn btn-primary">+ New Entry</a>
+  </div>
 
   {% if entries %}
-    <div class="space-y-4">
+    <div class="grid-2">
       {% for entry in entries %}
-        <div class="p-4 border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition">
-          <h2 class="text-xl font-semibold text-indigo-600">{{ entry.title }}</h2>
+        <article class="journal-card fade-up">
+          <h2 class="journal-title">{{ entry.title }}</h2>
           <p class="text-gray-700 mt-2">{{ entry.content|truncatechars:150 }}</p>
-          <p class="text-sm text-gray-500 mt-2">
-            Created on: {{ entry.created_at|date:"M d, Y" }} by {{ entry.author.username }}
-          </p>
-        </div>
+          <div class="mt-3 flex items-center justify-between">
+            <p class="journal-meta">Created: {{ entry.created_at|date:"M d, Y" }} • {{ entry.author.username }}</p>
+            <a href="{% url 'journal-detail' entry.pk %}" class="journal-link">Read more →</a>
+          </div>
+        </article>
       {% endfor %}
     </div>
   {% else %}
     <p class="text-gray-600">No journal entries found. Start writing one!</p>
   {% endif %}
 </div>
-    
-
 {% endblock %}

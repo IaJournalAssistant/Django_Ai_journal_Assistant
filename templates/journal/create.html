@@ -1,22 +1,430 @@
 {% extends 'layouts/blank.html' %}
+{% load static %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <h1>Create Journal Entry</h1>
-        <form method="POST">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="title" class="form-label">Title</label>
-                <input type="text" class="form-control" id="title" name="title" required>
-            </div>
-            <div class="mb-3">
-                <label for="content" class="form-label">Content</label>
-                <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Save Entry</button>
-            <a href="{% url 'journal-list' %}" class="btn btn-secondary">Cancel</a>
-        </form>
+<link rel="stylesheet" href="{% static 'css/journal.css' %}">
+
+<div class="journal-container">
+  <div class="journal-form fade-up">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold">Create Journal Entry</h1>
+      <a href="{% url 'journal-list' %}" class="btn btn-secondary">← Back to list</a>
     </div>
+
+    <form method="POST" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <!-- Journal Content -->
+      <div class="space-y-4">
+        <div>
+          <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-700">Title</label>
+          {{ form.title }}
+        </div>
+
+        <div>
+          <label for="{{ form.content.id_for_label }}" class="block text-sm font-semibold text-gray-700">Content</label>
+          {{ form.content }}
+        </div>
+
+        <!-- Media Upload Section -->
+        <div class="border-t pt-4">
+          <h3 class="text-lg font-semibold mb-3">Attach Media Files</h3>
+
+          <!-- Voice Recording Section -->
+          <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 class="font-medium text-gray-700 mb-3 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                  d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"
+                  clip-rule="evenodd" />
+              </svg>
+              Voice Recording
+            </h4>
+
+            <div class="flex items-center space-x-3">
+              <button type="button" id="recordBtn"
+                class="flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                <svg id="micIcon" class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd"
+                    d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"
+                    clip-rule="evenodd" />
+                </svg>
+                <span id="recordText">Start Recording</span>
+              </button>
+
+              <div id="recordingTimer" class="text-sm text-gray-600 hidden">
+                <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>
+                <span id="timerText">00:00</span>
+              </div>
+
+              <div id="recordingControls" class="flex items-center space-x-2 hidden">
+                <button type="button" id="stopBtn"
+                  class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm">Stop</button>
+                <button type="button" id="cancelRecordBtn"
+                  class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Voice Recordings Preview -->
+            <div id="voiceRecordings" class="mt-4 space-y-2 hidden">
+              <h5 class="font-medium text-gray-700">Voice Recordings:</h5>
+              <div id="voiceList" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <!-- File Drop Zone -->
+          <div id="dropzone"
+            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
+            <input type="file" id="fileInput" name="files" multiple
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" class="hidden">
+            <div class="space-y-2">
+              <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path
+                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <p class="text-gray-600">Click to select files or drag and drop</p>
+              <p class="text-sm text-gray-500">Images, Videos, Audio, Documents supported</p>
+            </div>
+          </div>
+
+          <!-- File Preview Area -->
+          <div id="filePreview" class="mt-4 space-y-2 hidden">
+            <h4 class="font-medium text-gray-700">Selected Files:</h4>
+            <div id="fileList" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 mt-6">
+        <button type="submit" class="btn btn-primary" onclick="prepareVoiceRecordings()">Create Entry</button>
+        <a href="{% url 'journal-list' %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+    const fileList = document.getElementById('fileList');
+
+    // Voice Recording Variables
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    let recordingTimerInterval;
+    let startTime;
+    const recordedAudios = [];
+
+    const recordBtn = document.getElementById('recordBtn');
+    const recordText = document.getElementById('recordText');
+    const micIcon = document.getElementById('micIcon');
+    const recordingTimerEl = document.getElementById('recordingTimer');
+    const timerText = document.getElementById('timerText');
+    const recordingControls = document.getElementById('recordingControls');
+    const stopBtn = document.getElementById('stopBtn');
+    const cancelRecordBtn = document.getElementById('cancelRecordBtn');
+    const voiceRecordings = document.getElementById('voiceRecordings');
+    const voiceList = document.getElementById('voiceList');
+
+    // Voice Recording Functions
+    recordBtn.addEventListener('click', async () => {
+      if (!isRecording) {
+        await startRecording();
+      }
+    });
+
+    stopBtn.addEventListener('click', () => {
+      stopRecording();
+    });
+
+    cancelRecordBtn.addEventListener('click', () => {
+      cancelRecording();
+    });
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          addVoiceRecording(audioBlob, audioUrl);
+
+          // Stop all tracks to release microphone
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        startTime = Date.now();
+
+        // Update UI
+        recordBtn.classList.add('hidden');
+        recordingTimerEl.classList.remove('hidden');
+        recordingControls.classList.remove('hidden');
+
+        // Start timer
+        recordingTimerInterval = setInterval(updateTimer, 1000);
+
+      } catch (error) {
+        console.error('Error accessing microphone:', error);
+        alert('Could not access microphone. Please check permissions.');
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        clearInterval(recordingTimerInterval);
+
+        // Reset UI
+        recordBtn.classList.remove('hidden');
+        recordingTimerEl.classList.add('hidden');
+        recordingControls.classList.add('hidden');
+        recordText.textContent = 'Start Recording';
+      }
+    }
+
+    function cancelRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        clearInterval(recordingTimerInterval);
+        audioChunks = [];
+
+        // Reset UI
+        recordBtn.classList.remove('hidden');
+        recordingTimerEl.classList.add('hidden');
+        recordingControls.classList.add('hidden');
+        recordText.textContent = 'Start Recording';
+      }
+    }
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function addVoiceRecording(audioBlob, audioUrl) {
+      const recordingId = Date.now();
+      recordedAudios.push({ id: recordingId, blob: audioBlob, url: audioUrl });
+
+      const voiceItem = document.createElement('div');
+      voiceItem.className = 'flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200';
+      voiceItem.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 flex items-center justify-center bg-blue-100 rounded-full">
+                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">Voice Recording</p>
+                    <p class="text-sm text-gray-500">${formatDuration(audioBlob.size)}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <audio controls class="h-8">
+                    <source src="${audioUrl}" type="audio/wav">
+                </audio>
+                <input type="text" placeholder="Add caption..." 
+                       class="px-2 py-1 border border-gray-300 rounded text-sm w-32"
+                       data-recording-id="${recordingId}">
+                <button type="button" onclick="removeVoiceRecording(${recordingId})" 
+                        class="text-red-500 hover:text-red-700">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+      voiceList.appendChild(voiceItem);
+      voiceRecordings.classList.remove('hidden');
+    }
+
+    function formatDuration(size) {
+      // Rough estimation based on file size
+      const seconds = Math.floor(size / 16000); // Approximate
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    window.removeVoiceRecording = function (recordingId) {
+      const index = recordedAudios.findIndex(audio => audio.id === recordingId);
+      if (index > -1) {
+        URL.revokeObjectURL(recordedAudios[index].url);
+        recordedAudios.splice(index, 1);
+      }
+
+      const voiceItem = document.querySelector(`[data-recording-id="${recordingId}"]`).closest('.flex');
+      voiceItem.remove();
+
+      if (recordedAudios.length === 0) {
+        voiceRecordings.classList.add('hidden');
+      }
+    };
+
+    // Click to select files
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop functionality
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-blue-400', 'bg-blue-50');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('border-blue-400', 'bg-blue-50');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-blue-400', 'bg-blue-50');
+
+      const files = e.dataTransfer.files;
+      fileInput.files = files;
+      displayFiles(files);
+    });
+
+    // File selection handler
+    fileInput.addEventListener('change', (e) => {
+      displayFiles(e.target.files);
+    });
+
+    function displayFiles(files) {
+      if (files.length === 0) {
+        filePreview.classList.add('hidden');
+        return;
+      }
+
+      filePreview.classList.remove('hidden');
+      fileList.innerHTML = '';
+
+      Array.from(files).forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+
+        const fileType = detectFileType(file.name);
+        const fileIcon = getFileIcon(fileType);
+
+        fileItem.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 flex items-center justify-center">
+                        ${fileIcon}
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">${file.name}</p>
+                        <p class="text-sm text-gray-500">${formatFileSize(file.size)} • ${fileType}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="text" name="caption_${file.name}" placeholder="Add caption..." 
+                           class="px-2 py-1 border border-gray-300 rounded text-sm w-32">
+                    <button type="button" onclick="removeFile(${index})" 
+                            class="text-red-500 hover:text-red-700">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+
+        fileList.appendChild(fileItem);
+      });
+    }
+
+    function detectFileType(filename) {
+      const ext = filename.toLowerCase().split('.').pop();
+      const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+      const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
+      const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma'];
+      const docExts = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'];
+
+      if (imageExts.includes(ext)) return 'image';
+      if (videoExts.includes(ext)) return 'video';
+      if (audioExts.includes(ext)) return 'audio';
+      if (docExts.includes(ext)) return 'document';
+      return 'other';
+    }
+
+    function getFileIcon(type) {
+      const icons = {
+        image: '<svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>',
+        video: '<svg class="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>',
+        audio: '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 12a5.984 5.984 0 01-.757 2.828 1 1 0 11-1.415-1.414A3.987 3.987 0 0013 12a3.988 3.988 0 00-.172-1.414 1 1 0 010-1.415z" clip-rule="evenodd"/></svg>',
+        document: '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>',
+        other: '<svg class="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>'
+      };
+      return icons[type] || icons.other;
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    window.removeFile = function (index) {
+      const dt = new DataTransfer();
+      const files = Array.from(fileInput.files);
+      files.splice(index, 1);
+
+      files.forEach(file => dt.items.add(file));
+      fileInput.files = dt.files;
+
+      displayFiles(fileInput.files);
+    };
+
+    // Prepare voice recordings for form submission
+    window.prepareVoiceRecordings = function () {
+      const form = document.querySelector('form');
+
+      // Add voice recordings as files to the form
+      recordedAudios.forEach((audio, index) => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.name = 'voice_recordings';
+        fileInput.style.display = 'none';
+
+        // Convert blob to file
+        const file = new File([audio.blob], `voice_recording_${Date.now()}_${index}.wav`, {
+          type: 'audio/wav'
+        });
+
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+
+        form.appendChild(fileInput);
+
+        // Add caption
+        const captionInput = document.querySelector(`[data-recording-id="${audio.id}"]`);
+        if (captionInput && captionInput.value) {
+          const hiddenCaption = document.createElement('input');
+          hiddenCaption.type = 'hidden';
+          hiddenCaption.name = `voice_caption_${index}`;
+          hiddenCaption.value = captionInput.value;
+          form.appendChild(hiddenCaption);
+        }
+      });
+    };
+  });
+</script>
 {% endblock %}

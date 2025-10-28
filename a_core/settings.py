@@ -48,13 +48,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     
+    
 
 
     # My apps
     'a_home',
     'a_users',
     'journal',
-    # Third party
+    'media_manager',
     'django_browser_reload',
 ]
 
