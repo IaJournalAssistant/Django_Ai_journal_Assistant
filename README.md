@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #### Video Tutorial for this project
 https://youtu.be/SQ4A7Q6_md8
 <br><br>
@@ -74,5 +75,6 @@ from django.core.management.utils import get_random_secret_key
 print(get_random_secret_key())
 exit()
 ```
+
 
 
