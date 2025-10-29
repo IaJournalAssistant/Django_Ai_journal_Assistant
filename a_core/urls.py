@@ -29,6 +29,8 @@ urlpatterns = [
     path('@<username>/', profile_view, name="profile"),
     path('journal/', include('journal.urls')),  # Single journal entry point
     path('media/', include('media_manager.urls')),  # Media manager entry point
+    path('journal/', include('journal.urls')),  # Single journal entry point
+    path('media/', include('media_manager.urls')),  # Media manager entry point
     path('planning/', include('a_planning.urls')),  # Task & Project Planning
 ]
 
