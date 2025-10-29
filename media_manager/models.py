@@ -18,6 +18,21 @@ class MediaFile(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     journal = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='media_files', null=True, blank=True)
     
+    # Speech-to-text fields (non-intrusive addition)
+    transcription = models.TextField(blank=True, null=True, help_text="Auto-generated transcription for audio files")
+    transcription_status = models.CharField(
+        max_length=20, 
+        choices=[
+            ('pending', 'Pending'),
+            ('processing', 'Processing'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed'),
+        ],
+        default='pending',
+        help_text="Status of speech-to-text processing"
+    )
+    transcription_confidence = models.FloatField(null=True, blank=True, help_text="Confidence score of transcription")
+    
     class Meta:
         ordering = ['-uploaded_at']
 

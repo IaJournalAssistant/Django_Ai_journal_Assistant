@@ -1,0 +1,110 @@
+{% extends 'a_planning/base_planning.html' %}
+{% load static %}
+
+{% block planning_content %}
+<div x-data="{ activeTab: 'goals' }">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'planning:goal-list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{% if is_edit %}Edit Goal{% else %}Create New Goal{% endif %}</h1>
+                <p class="text-gray-600 mt-1">{% if is_edit %}Update your goal details{% else %}Set a new goal to track your progress{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Form -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Title -->
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Goal Title *</label>
+                <input type="text" id="title" name="title" required
+                       value="{% if goal %}{{ goal.title }}{% endif %}"
+                       class="w-full rounded-lg border-gray-300 focus:border-pink-500 focus:ring-pink-500"
+                       placeholder="Enter your goal title...">
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Goal Description</label>
+                <textarea id="description" name="description" rows="3"
+                          class="w-full rounded-lg border-gray-300 focus:border-pink-500 focus:ring-pink-500"
+                          placeholder="Describe your goal and why it's important to you...">{% if goal %}{{ goal.description }}{% endif %}</textarea>
+            </div>
+            
+            <!-- Success Criteria -->
+            <div>
+                <label for="success_criteria" class="block text-sm font-medium text-gray-700 mb-2">Success Criteria *</label>
+                <textarea id="success_criteria" name="success_criteria" rows="4" required
+                          class="w-full rounded-lg border-gray-300 focus:border-pink-500 focus:ring-pink-500"
+                          placeholder="Define what success looks like. Be specific and measurable...">{% if goal %}{{ goal.success_criteria }}{% endif %}</textarea>
+                <p class="text-sm text-gray-500 mt-1">Be specific! Instead of "Get fit", try "Exercise 3 times per week for 30 minutes"</p>
+            </div>
+            
+            <!-- Target Date -->
+            <div>
+                <label for="target_date" class="block text-sm font-medium text-gray-700 mb-2">Target Date *</label>
+                <input type="date" id="target_date" name="target_date" required
+                       value="{% if goal.target_date %}{{ goal.target_date|date:'Y-m-d' }}{% endif %}"
+                       class="w-full rounded-lg border-gray-300 focus:border-pink-500 focus:ring-pink-500">
+                <p class="text-sm text-gray-500 mt-1">When do you want to achieve this goal?</p>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                <a href="{% url 'planning:goal-list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium px-6 py-3 rounded-lg transition-all">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {% if is_edit %}Update Goal{% else %}Create Goal{% endif %}
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SMART Goals Framework -->
+    <div class="mt-6 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-6 border border-pink-100">
+        <h3 class="text-lg font-semibold text-pink-900 mb-3">🎯 SMART Goals Framework</h3>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
+            <div class="text-center">
+                <div class="bg-pink-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2">S</div>
+                <h4 class="font-semibold text-pink-900">Specific</h4>
+                <p class="text-pink-700">Clear and well-defined</p>
+            </div>
+            <div class="text-center">
+                <div class="bg-pink-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2">M</div>
+                <h4 class="font-semibold text-pink-900">Measurable</h4>
+                <p class="text-pink-700">Track your progress</p>
+            </div>
+            <div class="text-center">
+                <div class="bg-pink-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2">A</div>
+                <h4 class="font-semibold text-pink-900">Achievable</h4>
+                <p class="text-pink-700">Realistic and attainable</p>
+            </div>
+            <div class="text-center">
+                <div class="bg-pink-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2">R</div>
+                <h4 class="font-semibold text-pink-900">Relevant</h4>
+                <p class="text-pink-700">Matters to you</p>
+            </div>
+            <div class="text-center">
+                <div class="bg-pink-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold mx-auto mb-2">T</div>
+                <h4 class="font-semibold text-pink-900">Time-bound</h4>
+                <p class="text-pink-700">Has a deadline</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

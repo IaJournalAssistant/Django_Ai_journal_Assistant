@@ -1,3 +1,517 @@
-from django.shortcuts import render
+"""
+Views for the Task & Project Planning module
+"""
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Q, Count, Avg
+from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
 
-# Create your views here.
+from .models import Task, Project, Goal, TaskComment, AIInsight
+
+
+@login_required
+def dashboard_view(request):
+    """
+    Main dashboard view with overview statistics and recent items
+    """
+    user = request.user
+    
+    # Calculate statistics
+    total_tasks = Task.objects.filter(user=user).count()
+    completed_tasks = Task.objects.filter(user=user, status='completed').count()
+    active_projects = Project.objects.filter(user=user, status='active').count()
+    active_goals = Goal.objects.filter(user=user, status='active').count()
+    achieved_goals = Goal.objects.filter(user=user, status='achieved').count()
+    pending_insights = AIInsight.objects.filter(user=user, is_applied=False, is_dismissed=False).count()
+    applied_insights = AIInsight.objects.filter(user=user, is_applied=True).count()
+    
+    # Calculate average project progress
+    avg_progress = Project.objects.filter(user=user, status='active').aggregate(
+        avg_progress=Avg('progress_percentage')
+    )['avg_progress'] or 0
+    
+    stats = {
+        'total_tasks': total_tasks,
+        'completed_tasks': completed_tasks,
+        'active_projects': active_projects,
+        'active_goals': active_goals,
+        'achieved_goals': achieved_goals,
+        'pending_insights': pending_insights,
+        'applied_insights': applied_insights,
+        'avg_progress': round(avg_progress),
+    }
+    
+    # Get recent items
+    recent_tasks = Task.objects.filter(user=user).order_by('-created_at')[:5]
+    active_projects_list = Project.objects.filter(user=user, status='active').order_by('-updated_at')[:3]
+    active_goals_list = Goal.objects.filter(user=user, status='active').order_by('-updated_at')[:3]
+    pending_insights_list = AIInsight.objects.filter(
+        user=user, is_applied=False, is_dismissed=False
+    ).order_by('-created_at')[:3]
+    
+    context = {
+        'active_tab': 'dashboard',
+        'stats': stats,
+        'recent_tasks': recent_tasks,
+        'active_projects': active_projects_list,
+        'active_goals': active_goals_list,
+        'pending_insights': pending_insights_list,
+    }
+    
+    return render(request, 'a_planning/dashboard.html', context)
+
+
+@login_required
+def task_list_view(request):
+    """
+    Task list view with filtering and search
+    """
+    tasks = Task.objects.filter(user=request.user)
+    
+    # Apply filters
+    status_filter = request.GET.get('status')
+    priority_filter = request.GET.get('priority')
+    project_filter = request.GET.get('project')
+    search_query = request.GET.get('search')
+    
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+    
+    if priority_filter:
+        tasks = tasks.filter(priority=priority_filter)
+    
+    if project_filter:
+        if project_filter == 'none':
+            tasks = tasks.filter(project__isnull=True)
+        else:
+            tasks = tasks.filter(project_id=project_filter)
+    
+    if search_query:
+        tasks = tasks.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
+    
+    tasks = tasks.order_by('-created_at')
+    
+    # Get filter options
+    projects = Project.objects.filter(user=request.user, status='active')
+    
+    context = {
+        'active_tab': 'tasks',
+        'tasks': tasks,
+        'projects': projects,
+        'current_filters': {
+            'status': status_filter,
+            'priority': priority_filter,
+            'project': project_filter,
+            'search': search_query,
+        }
+    }
+    
+    return render(request, 'a_planning/task_list.html', context)
+
+
+@login_required
+def task_create_view(request):
+    """
+    Create a new task
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        priority = request.POST.get('priority', 'medium')
+        project_id = request.POST.get('project')
+        due_date = request.POST.get('due_date')
+        
+        if not title:
+            messages.error(request, 'Task title is required.')
+            return redirect('planning:task-create')
+        
+        task = Task.objects.create(
+            title=title,
+            description=description,
+            priority=priority,
+            user=request.user,
+            due_date=due_date if due_date else None
+        )
+        
+        if project_id:
+            try:
+                project = Project.objects.get(id=project_id, user=request.user)
+                task.project = project
+                task.save()
+                project.update_progress()
+            except Project.DoesNotExist:
+                pass
+        
+        messages.success(request, f'Task "{title}" created successfully!')
+        return redirect('planning:task-list')
+    
+    projects = Project.objects.filter(user=request.user, status='active')
+    
+    context = {
+        'active_tab': 'tasks',
+        'projects': projects,
+    }
+    
+    return render(request, 'a_planning/task_form.html', context)
+
+
+@login_required
+def task_detail_view(request, task_id):
+    """
+    Task detail view with comments and actions
+    """
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    comments = task.comments.all().order_by('created_at')
+    
+    context = {
+        'active_tab': 'tasks',
+        'task': task,
+        'comments': comments,
+    }
+    
+    return render(request, 'a_planning/task_detail.html', context)
+
+
+@login_required
+def task_edit_view(request, task_id):
+    """
+    Edit an existing task
+    """
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        priority = request.POST.get('priority', 'medium')
+        project_id = request.POST.get('project')
+        due_date = request.POST.get('due_date')
+        
+        if not title:
+            messages.error(request, 'Task title is required.')
+            return redirect('planning:task-edit', task_id=task.id)
+        
+        task.title = title
+        task.description = description
+        task.priority = priority
+        task.due_date = due_date if due_date else None
+        
+        if project_id:
+            try:
+                project = Project.objects.get(id=project_id, user=request.user)
+                task.project = project
+            except Project.DoesNotExist:
+                task.project = None
+        else:
+            task.project = None
+        
+        task.save()
+        
+        # Update project progress if task is in a project
+        if task.project:
+            task.project.update_progress()
+        
+        messages.success(request, f'Task "{title}" updated successfully!')
+        return redirect('planning:task-detail', task_id=task.id)
+    
+    projects = Project.objects.filter(user=request.user, status='active')
+    
+    context = {
+        'active_tab': 'tasks',
+        'task': task,
+        'projects': projects,
+        'is_edit': True,
+    }
+    
+    return render(request, 'a_planning/task_form.html', context)
+
+
+@login_required
+def task_delete_view(request, task_id):
+    """
+    Delete a task
+    """
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    
+    if request.method == 'POST':
+        task_title = task.title
+        project = task.project
+        task.delete()
+        
+        # Update project progress if task was in a project
+        if project:
+            project.update_progress()
+        
+        messages.success(request, f'Task "{task_title}" deleted successfully!')
+        return redirect('planning:task-list')
+    
+    context = {
+        'active_tab': 'tasks',
+        'task': task,
+    }
+    
+    return render(request, 'a_planning/task_confirm_delete.html', context)
+
+
+@login_required
+def task_add_comment_view(request, task_id):
+    """
+    Add a comment to a task
+    """
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        
+        if content:
+            TaskComment.objects.create(
+                task=task,
+                user=request.user,
+                content=content
+            )
+            messages.success(request, 'Comment added successfully!')
+        else:
+            messages.error(request, 'Comment content is required.')
+    
+    return redirect('planning:task-detail', task_id=task.id)
+
+
+@login_required
+def project_list_view(request):
+    """
+    Project list view with filtering
+    """
+    projects = Project.objects.filter(user=request.user)
+    
+    # Apply filters
+    status_filter = request.GET.get('status')
+    search_query = request.GET.get('search')
+    
+    if status_filter:
+        projects = projects.filter(status=status_filter)
+    
+    if search_query:
+        projects = projects.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
+    
+    projects = projects.order_by('-created_at')
+    
+    context = {
+        'active_tab': 'projects',
+        'projects': projects,
+        'current_filters': {
+            'status': status_filter,
+            'search': search_query,
+        }
+    }
+    
+    return render(request, 'a_planning/project_list.html', context)
+
+
+@login_required
+def project_create_view(request):
+    """
+    Create a new project
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        start_date = request.POST.get('start_date')
+        target_completion_date = request.POST.get('target_completion_date')
+        
+        if not title:
+            messages.error(request, 'Project title is required.')
+            return redirect('planning:project-create')
+        
+        project = Project.objects.create(
+            title=title,
+            description=description,
+            user=request.user,
+            start_date=start_date if start_date else None,
+            target_completion_date=target_completion_date if target_completion_date else None
+        )
+        
+        messages.success(request, f'Project "{title}" created successfully!')
+        return redirect('planning:project-list')
+    
+    context = {
+        'active_tab': 'projects',
+    }
+    
+    return render(request, 'a_planning/project_form.html', context)
+
+
+@login_required
+def project_detail_view(request, project_id):
+    """
+    Project detail view with tasks
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    tasks = project.tasks.all().order_by('-created_at')
+    
+    context = {
+        'active_tab': 'projects',
+        'project': project,
+        'tasks': tasks,
+    }
+    
+    return render(request, 'a_planning/project_detail.html', context)
+
+
+@login_required
+def goal_list_view(request):
+    """
+    Goal list view with filtering
+    """
+    goals = Goal.objects.filter(user=request.user)
+    
+    # Apply filters
+    status_filter = request.GET.get('status')
+    search_query = request.GET.get('search')
+    
+    if status_filter:
+        goals = goals.filter(status=status_filter)
+    
+    if search_query:
+        goals = goals.filter(
+            Q(title__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(success_criteria__icontains=search_query)
+        )
+    
+    goals = goals.order_by('-created_at')
+    
+    context = {
+        'active_tab': 'goals',
+        'goals': goals,
+        'current_filters': {
+            'status': status_filter,
+            'search': search_query,
+        }
+    }
+    
+    return render(request, 'a_planning/goal_list.html', context)
+
+
+@login_required
+def goal_create_view(request):
+    """
+    Create a new goal
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        success_criteria = request.POST.get('success_criteria')
+        target_date = request.POST.get('target_date')
+        
+        if not title or not success_criteria or not target_date:
+            messages.error(request, 'Title, success criteria, and target date are required.')
+            return redirect('planning:goal-create')
+        
+        goal = Goal.objects.create(
+            title=title,
+            description=description,
+            success_criteria=success_criteria,
+            target_date=target_date,
+            user=request.user
+        )
+        
+        messages.success(request, f'Goal "{title}" created successfully!')
+        return redirect('planning:goal-list')
+    
+    context = {
+        'active_tab': 'goals',
+    }
+    
+    return render(request, 'a_planning/goal_form.html', context)
+
+
+@login_required
+def goal_detail_view(request, goal_id):
+    """
+    Goal detail view with progress tracking
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    context = {
+        'active_tab': 'goals',
+        'goal': goal,
+    }
+    
+    return render(request, 'a_planning/goal_detail.html', context)
+
+
+# HTMX Views for dynamic updates
+@login_required
+@require_http_methods(["POST"])
+def task_toggle_status(request, task_id):
+    """
+    Toggle task status via HTMX
+    """
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    
+    if task.status == 'completed':
+        task.status = 'pending'
+    elif task.status == 'pending':
+        task.status = 'in_progress'
+    else:  # in_progress
+        task.mark_completed()
+    
+    task.save()
+    
+    # Update project progress if task is in a project
+    if task.project:
+        task.project.update_progress()
+    
+    return JsonResponse({
+        'status': task.status,
+        'status_display': task.get_status_display(),
+        'completed_at': task.completed_at.isoformat() if task.completed_at else None
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_update_progress(request, project_id):
+    """
+    Update project progress via HTMX
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    project.update_progress()
+    
+    return JsonResponse({
+        'progress_percentage': project.progress_percentage,
+        'task_counts': project.get_task_counts()
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def goal_update_progress(request, goal_id):
+    """
+    Update goal progress via HTMX
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    percentage = request.POST.get('percentage')
+    
+    if percentage:
+        try:
+            percentage = int(percentage)
+            if 0 <= percentage <= 100:
+                goal.update_progress(percentage)
+                return JsonResponse({
+                    'progress_percentage': goal.progress_percentage,
+                    'status': goal.status,
+                    'achieved_at': goal.achieved_at.isoformat() if goal.achieved_at else None
+                })
+        except (ValueError, TypeError):
+            pass
+    
+    return JsonResponse({'error': 'Invalid percentage'}, status=400)
