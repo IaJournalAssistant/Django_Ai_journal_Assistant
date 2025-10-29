@@ -12,6 +12,8 @@
             <li><a href="/journal/create">Create journal </a></li>
 
             <li><a href="/">Home</a></li>
+            <li><a href="{% url 'note-list' %}">Notes</a></li>
+            <li><a href="{% url 'tag-list' %}">Tags</a></li>
             <li x-data="{ dropdownOpen: false }" class="relative">
                 <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
                     <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />

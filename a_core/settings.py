@@ -113,9 +113,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'DjangoProject',       # 👈 name of the DB you created in pgAdmin
         'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'jihed12345',  # 👈 your pgAdmin password
+        'PASSWORD': 'islem',  # 👈 your pgAdmin password
         'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5434',              # 👈 default PostgreSQL port
+        'PORT': '5432',              # 👈 default PostgreSQL port
     }
 }
 
