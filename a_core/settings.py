@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Project title displayed in the header
-PROJECT_TITLE = "Project Title"
+PROJECT_TITLE = "Smart Journal"
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -40,11 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'django_cleanup.apps.CleanupConfig',
     'django_htmx',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
+    'allauth.mfa',
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -111,11 +113,11 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'DjangoProject',       # 👈 name of the DB you created in pgAdmin
+        'NAME': 'DjangoProject',     # 👈 name of the DB you created in pgAdmin
         'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'jihed12345',  # 👈 your pgAdmin password
+        'PASSWORD': 'okba',          # 👈 your pgAdmin password
         'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5434',              # 👈 default PostgreSQL port
+        'PORT': '5432',              # 👈 default PostgreSQL port
     }
 }
 
@@ -163,10 +165,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_ON_GET = False  # Require POST for logout (security)
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+# Disable email verification requirement for MFA/passkeys
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -177,3 +184,19 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ]
 }
+
+# WebAuthn/Passkey Settings (Face Login)
+# Enables Face ID, Windows Hello, Touch ID, and security keys
+MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+MFA_PASSKEY_LOGIN_ENABLED = True
+# Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
+# We're using passkey LOGIN only (users add passkeys after signup)
+
+# ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
+# TODO: Remove this in production! Use default adapter for security
+MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+
+# ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
+# TODO: Remove this setting before deploying to production!
+# Production requires HTTPS - this is a security requirement of WebAuthn
+MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
