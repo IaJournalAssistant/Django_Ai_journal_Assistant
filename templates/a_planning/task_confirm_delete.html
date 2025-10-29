@@ -1,0 +1,66 @@
+{% extends 'a_planning/base_planning.html' %}
+{% load static %}
+
+{% block planning_content %}
+<div x-data="{ activeTab: 'tasks' }">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'planning:task-detail' task.id %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-900">Delete Task</h1>
+                <p class="text-gray-600 mt-1">Confirm deletion of "{{ task.title }}"</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+            <!-- Warning Icon -->
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Are you sure?</h2>
+                <p class="text-gray-600">This action cannot be undone. This will permanently delete the task and all associated comments.</p>
+            </div>
+
+            <!-- Task Details -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-gray-900 mb-2">{{ task.title }}</h3>
+                {% if task.description %}
+                <p class="text-gray-600 text-sm mb-2">{{ task.description|truncatewords:20 }}</p>
+                {% endif %}
+                <div class="flex items-center gap-4 text-xs text-gray-500">
+                    <span class="px-2 py-1 rounded-full bg-gray-200">{{ task.get_priority_display }} Priority</span>
+                    <span class="px-2 py-1 rounded-full bg-gray-200">{{ task.get_status_display }}</span>
+                    {% if task.project %}
+                    <span class="px-2 py-1 rounded-full bg-purple-100 text-purple-700">{{ task.project.title }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Actions -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <a href="{% url 'planning:task-detail' task.id %}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium px-6 py-3 rounded-lg transition-all">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-3 rounded-lg transition-all">
+                        Delete Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

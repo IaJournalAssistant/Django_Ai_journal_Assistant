@@ -15,15 +15,33 @@
             </h1>
             <p class="text-xl lg:text-2xl text-indigo-100 mb-10 max-w-3xl mx-auto">
                 Capture your thoughts, memories, and media in one intelligent space. 
-                Let AI help you reflect, organize, and discover insights from your daily entries.
+                Plan your tasks and projects while letting AI help you reflect, organize, and discover insights.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 {% if request.user.is_authenticated %}
                     <a href="{% url 'journal-create' %}" class="button bg-white !text-indigo-100 hover:!bg-gray-100 px-8 py-4 text-lg font-bold rounded-full shadow-2xl transform hover:scale-105 transition-all">
-                        Start Writing Now
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Start Writing Now
+                        </span>
+                    </a>
+                    <a href="{% url 'planning:dashboard' %}" class="button bg-white !text-purple-100 hover:!bg-gray-100 px-8 py-4 text-lg font-bold rounded-full shadow-2xl transform hover:scale-105 transition-all">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            Plan & Organize
+                        </span>
                     </a>
                     <a href="{% url 'journal-list' %}" class="button !bg-indigo-800 hover:!bg-indigo-900 px-8 py-4 text-lg font-bold rounded-full">
-                        View Your Journals
+                        <span class="flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                            </svg>
+                            View Your Journals
+                        </span>
                     </a>
                 {% else %}
                     <a href="{% url 'account_signup' %}" class="button bg-white !text-indigo-100 hover:!bg-gray-100 px-8 py-4 text-lg font-bold rounded-full shadow-2xl transform hover:scale-105 transition-all">
@@ -49,11 +67,11 @@
 <div class="py-20 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Everything You Need to Journal Smarter</h2>
-            <p class="text-xl text-gray-600">Powerful features designed for modern journaling</p>
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Everything You Need to Journal & Plan Smarter</h2>
+            <p class="text-xl text-gray-600">Powerful features designed for modern journaling and productivity</p>
         </div>
         
-        <div class="grid md:grid-cols-3 gap-8">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <!-- Feature 1 -->
             <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2">
                 <div class="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mb-6">
@@ -77,6 +95,17 @@
             </div>
             
             <!-- Feature 3 -->
+            <div class="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2">
+                <div class="bg-emerald-600 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Task & Project Planning</h3>
+                <p class="text-gray-600 leading-relaxed">Organize your life with intelligent task management, project tracking, and goal setting. Stay productive and focused.</p>
+            </div>
+            
+            <!-- Feature 4 -->
             <div class="bg-gradient-to-br from-pink-50 to-rose-100 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-2">
                 <div class="bg-pink-600 w-16 h-16 rounded-full flex items-center justify-center mb-6">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +113,7 @@
                     </svg>
                 </div>
                 <h3 class="text-2xl font-bold text-gray-900 mb-3">AI-Powered Insights</h3>
-                <p class="text-gray-600 leading-relaxed">Coming soon: Get intelligent suggestions, sentiment analysis, and meaningful patterns from your journal entries.</p>
+                <p class="text-gray-600 leading-relaxed">Get intelligent suggestions, sentiment analysis, and meaningful patterns from your journal entries and planning activities.</p>
             </div>
         </div>
     </div>
@@ -95,7 +124,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
             <h2 class="text-4xl font-bold text-gray-900 mb-4">Simple, Powerful, Private</h2>
-            <p class="text-xl text-gray-600">Start journaling in three easy steps</p>
+            <p class="text-xl text-gray-600">Start journaling and planning in three easy steps</p>
         </div>
         
         <div class="grid md:grid-cols-3 gap-12">
@@ -107,14 +136,14 @@
             
             <div class="text-center">
                 <div class="bg-purple-600 text-white w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-lg">2</div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-3">Write Your First Entry</h3>
-                <p class="text-gray-600">Start capturing your thoughts, memories, and moments.</p>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Write & Plan</h3>
+                <p class="text-gray-600">Start capturing your thoughts and organizing your tasks and projects.</p>
             </div>
             
             <div class="text-center">
                 <div class="bg-pink-600 text-white w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-lg">3</div>
                 <h3 class="text-2xl font-bold text-gray-900 mb-3">Discover Insights</h3>
-                <p class="text-gray-600">Review your journey and let AI help you reflect.</p>
+                <p class="text-gray-600">Review your journey and let AI help you reflect and stay productive.</p>
             </div>
         </div>
     </div>
@@ -130,9 +159,14 @@
             Start Free Today
         </a>
         {% else %}
-        <a href="{% url 'journal-create' %}" class="button bg-white !text-indigo-100 hover:!bg-gray-100 px-10 py-5 text-xl font-bold rounded-full shadow-2xl transform hover:scale-105 transition-all">
-            Create Your First Entry
-        </a>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="{% url 'journal-create' %}" class="button bg-white !text-indigo-100 hover:!bg-gray-100 px-8 py-4 text-lg font-bold rounded-full shadow-2xl transform hover:scale-105 transition-all">
+                Create Your First Entry
+            </a>
+            <a href="{% url 'planning:dashboard' %}" class="button !bg-indigo-800 hover:!bg-indigo-900 px-8 py-4 text-lg font-bold rounded-full">
+                Start Planning
+            </a>
+        </div>
         {% endif %}
     </div>
 </div>

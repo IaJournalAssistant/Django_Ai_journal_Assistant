@@ -14,6 +14,7 @@
     <nav class="block relative">
         <ul class="navitems flex items-center justify-center h-full gap-2">
             {% if request.user.is_authenticated %}
+            {% if '/planning/' not in request.path %}
             <li>
                 <a href="/journal/create" class="!bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md transition-all">
                     <span class="flex items-center gap-2">
@@ -24,7 +25,59 @@
                     </span>
                 </a>
             </li>
+            {% endif %}
+            
+            <!-- Planning Navigation -->
+            {% if '/planning/' in request.path %}
+            <li><a href="{% url 'planning:dashboard' %}" class="{% if 'dashboard' in request.resolver_match.url_name %}!bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700{% endif %}">Dashboard</a></li>
+            <li><a href="{% url 'planning:task-list' %}" class="{% if 'task' in request.resolver_match.url_name %}!bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700{% endif %}">Tasks</a></li>
+            <li><a href="{% url 'planning:project-list' %}" class="{% if 'project' in request.resolver_match.url_name %}!bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700{% endif %}">Projects</a></li>
+            <li><a href="{% url 'planning:goal-list' %}" class="{% if 'goal' in request.resolver_match.url_name %}!bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700{% endif %}">Goals</a></li>
+            
+            <!-- Quick Add Dropdown for Planning -->
+            <li x-data="{ quickAddOpen: false }" class="relative">
+                <button @click="quickAddOpen = !quickAddOpen" 
+                        @click.away="quickAddOpen = false"
+                        class="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold px-4 py-2.5 rounded-lg shadow-md transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span class="hidden sm:inline">Quick Add</span>
+                    <svg class="w-3 h-3" :class="quickAddOpen && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="quickAddOpen" 
+                     x-cloak
+                     class="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-20"
+                     x-transition:enter="duration-200 ease-out"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100">
+                    <a href="{% url 'planning:task-create' %}" class="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-all text-sm">
+                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        New Task
+                    </a>
+                    <a href="{% url 'planning:project-create' %}" class="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-all text-sm">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        New Project
+                    </a>
+                    <a href="{% url 'planning:goal-create' %}" class="flex items-center gap-2 px-4 py-3 hover:bg-gray-50 transition-all text-sm">
+                        <svg class="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        New Goal
+                    </a>
+                </div>
+            </li>
+            {% else %}
             <li><a href="/">Home</a></li>
+            <li><a href="{% url 'planning:dashboard' %}">Planning</a></li>
+            {% endif %}
             <li x-data="{ dropdownOpen: false }" class="relative">
                 <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
                     <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />

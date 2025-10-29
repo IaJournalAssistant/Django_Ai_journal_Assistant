@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'allauth.mfa',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_filters',
     
     
 
@@ -56,14 +57,11 @@ INSTALLED_APPS = [
     # My apps
     'a_home',
     'a_users',
-<<<<<<< HEAD
     'a_planning',
-    
-    # Third party
-=======
     'journal',
     'media_manager',
->>>>>>> b90bb67c0a0771d23b602f5ac79cb2a1dd2037dc
+    
+    # Third party
     'django_browser_reload',
 ]
 
@@ -118,17 +116,8 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 
 DATABASES = {
     'default': {
-<<<<<<< HEAD
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-=======
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'DjangoProject',     # 👈 name of the DB you created in pgAdmin
-        'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'okba',          # 👈 your pgAdmin password
-        'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5432',              # 👈 default PostgreSQL port
->>>>>>> b90bb67c0a0771d23b602f5ac79cb2a1dd2037dc
     }
 }
 
@@ -226,3 +215,25 @@ MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
 # TODO: Remove this setting before deploying to production!
 # Production requires HTTPS - this is a security requirement of WebAuthn
 MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+
+# Django REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+}
