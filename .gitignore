@@ -27,3 +27,11 @@ test_*.sqlite3
 
 # Test logs
 test_*.log
+./.venv/
+./.idea/
+./.gitignore
+./.git/
+./.idea/
+./.idea_modules/
+./.idea_modules/
+./.idea_modules/
