@@ -1,0 +1,238 @@
+{% extends "mfa/base_manage.html" %}
+{% load allauth %}
+{% load i18n %}
+
+{% block head_title %}
+    {% trans "Security & Two-Factor Authentication" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center gap-4 mb-4">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{% trans "Security & Two-Factor Authentication" %}</h1>
+            <p class="text-gray-600 mt-1">{% trans "Manage your security settings and authentication methods" %}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Security Keys / WebAuthn -->
+{% if "webauthn" in MFA_SUPPORTED_TYPES %}
+<div class="mb-6 bg-white border-2 {% if authenticators.webauthn|length %}border-green-200 bg-green-50{% else %}border-gray-200{% endif %} rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div class="p-6">
+        <div class="flex items-start gap-4 mb-4">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full {% if authenticators.webauthn|length %}bg-green-500{% else %}bg-gray-300{% endif %} flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">
+                    {% translate "Security Keys (Face ID / Windows Hello)" %}
+                    {% if authenticators.webauthn|length %}
+                        <span class="ml-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            {% trans "Active" %}
+                        </span>
+                    {% endif %}
+                </h2>
+                {% if authenticators.webauthn|length %}
+                    <p class="text-gray-700 mb-2">
+                        {% blocktranslate count count=authenticators.webauthn|length %}
+                            You have <strong>{{ count }} security key</strong> registered. Use Face ID, Touch ID, Windows Hello, or hardware keys for passwordless login.
+                        {% plural %}
+                            You have <strong>{{ count }} security keys</strong> registered. Use Face ID, Touch ID, Windows Hello, or hardware keys for passwordless login.
+                        {% endblocktranslate %}
+                    </p>
+                    <div class="flex items-center gap-2 text-sm text-green-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>{% trans "Passwordless login enabled" %}</span>
+                    </div>
+                {% else %}
+                    <p class="text-gray-600 mb-2">
+                        {% translate "Add a security key to enable passwordless login using Face ID, Windows Hello, Touch ID, or a hardware security key." %}
+                    </p>
+                    <ul class="text-sm text-gray-600 space-y-1 ml-5 list-disc">
+                        <li>{% trans "Sign in without passwords" %}</li>
+                        <li>{% trans "Stronger security than passwords" %}</li>
+                        <li>{% trans "Works on all your devices" %}</li>
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex gap-3">
+            {% if authenticators.webauthn|length %}
+                {% url 'mfa_list_webauthn' as webauthn_list_url %}
+                <a href="{{ webauthn_list_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-md transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                    {% translate "Manage Keys" %}
+                </a>
+            {% else %}
+                {% url 'mfa_add_webauthn' as webauthn_add_url %}
+                <a href="{{ webauthn_add_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-bold rounded-lg shadow-md transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {% translate "Add Security Key" %}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Authenticator App -->
+{% if "totp" in MFA_SUPPORTED_TYPES %}
+<div class="mb-6 bg-white border-2 {% if authenticators.totp %}border-blue-200 bg-blue-50{% else %}border-gray-200{% endif %} rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div class="p-6">
+        <div class="flex items-start gap-4 mb-4">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full {% if authenticators.totp %}bg-blue-500{% else %}bg-gray-300{% endif %} flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">
+                    {% translate "Authenticator App (TOTP)" %}
+                    {% if authenticators.totp %}
+                        <span class="ml-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            {% trans "Active" %}
+                        </span>
+                    {% endif %}
+                </h2>
+                {% if authenticators.totp %}
+                    <p class="text-gray-700">
+                        {% translate "Authentication using an authenticator app is active. Use apps like Google Authenticator, Authy, or 1Password." %}
+                    </p>
+                {% else %}
+                    <p class="text-gray-600 mb-2">
+                        {% translate "Add an authenticator app for time-based one-time passwords (TOTP). Compatible with Google Authenticator, Authy, 1Password, and more." %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex gap-3">
+            {% url 'mfa_deactivate_totp' as deactivate_url %}
+            {% url 'mfa_activate_totp' as activate_url %}
+            {% if authenticators.totp %}
+                <a href="{{ deactivate_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    {% translate "Deactivate" %}
+                </a>
+            {% else %}
+                <a href="{{ activate_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-md transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    {% translate "Activate" %}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recovery Codes -->
+{% if "recovery_codes" in MFA_SUPPORTED_TYPES %}
+{% with total_count=authenticators.recovery_codes.generate_codes|length unused_count=authenticators.recovery_codes.get_unused_codes|length %}
+<div class="mb-6 bg-white border-2 {% if authenticators.recovery_codes and unused_count > 0 %}border-amber-200 bg-amber-50{% else %}border-gray-200{% endif %} rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div class="p-6">
+        <div class="flex items-start gap-4 mb-4">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full {% if authenticators.recovery_codes %}bg-amber-500{% else %}bg-gray-300{% endif %} flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">
+                    {% translate "Recovery Codes" %}
+                    {% if authenticators.recovery_codes and unused_count > 0 %}
+                        <span class="ml-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {{ unused_count }} {% trans "available" %}
+                        </span>
+                    {% endif %}
+                </h2>
+                {% if authenticators.recovery_codes %}
+                    <p class="text-gray-700">
+                        {% blocktranslate count unused_count=unused_count %}
+                            There is <strong>{{ unused_count }} out of {{ total_count }}</strong> recovery code available. Keep these codes safe in case you lose access to your other authentication methods.
+                        {% plural %}
+                            There are <strong>{{ unused_count }} out of {{ total_count }}</strong> recovery codes available. Keep these codes safe in case you lose access to your other authentication methods.
+                        {% endblocktranslate %}
+                    </p>
+                {% else %}
+                    <p class="text-gray-600">
+                        {% translate "Recovery codes can be used to access your account if you lose access to your other authentication methods. Generate and store them safely." %}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        {% if is_mfa_enabled %}
+        <div class="flex gap-3 flex-wrap">
+            {% if authenticators.recovery_codes and unused_count > 0 %}
+                {% url 'mfa_view_recovery_codes' as view_url %}
+                <a href="{{ view_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-md transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    {% translate "View Codes" %}
+                </a>
+                {% url 'mfa_download_recovery_codes' as download_url %}
+                <a href="{{ download_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg shadow-md transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    {% translate "Download" %}
+                </a>
+            {% endif %}
+            {% url 'mfa_generate_recovery_codes' as generate_url %}
+            <a href="{{ generate_url }}" class="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow-md transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                {% translate "Generate New Codes" %}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endwith %}
+{% endif %}
+
+<!-- Info Banner -->
+<div class="mt-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+    <div class="flex items-start gap-4">
+        <svg class="w-6 h-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+            <h3 class="text-lg font-bold text-blue-900 mb-2">{% trans "Why use two-factor authentication?" %}</h3>
+            <p class="text-blue-800 mb-2">
+                {% trans "Two-factor authentication adds an extra layer of security to your account. Even if someone knows your password, they won't be able to access your account without the second factor." %}
+            </p>
+            <p class="text-blue-800 text-sm">
+                {% trans "We recommend using security keys (Face ID/Windows Hello) for the best security and convenience." %}
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
