@@ -5,11 +5,18 @@
     {% trans "Login" %}
 {% endblock head_title %}
 {% block content %}
-    <h1>Login</h1>
-    <p>
-        If you have not created an account yet, then please
-    <a href="{% url 'account_signup' %}?next={% url 'profile-onboarding' %}">sign up</a> first.
-    </p>
+    <div class="text-center mb-8">
+        <div class="inline-block bg-gradient-to-br from-indigo-600 to-purple-600 w-20 h-20 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+        </div>
+        <h1 class="!text-5xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">Welcome Back!</h1>
+        <p class="text-gray-600 text-lg">
+            Continue your journaling journey
+        </p>
+    </div>
+    
     {% url 'account_login' as login_url %}
     {% element form form=form method="post" action=login_url tags="entrance,login" %}
         {% slot body %}
@@ -24,10 +31,25 @@
         {% endslot %}
         {% slot actions %}
             {% element button type="submit" tags="prominent,login" %}
-                {% trans "Sign In" %}
+                <span class="flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                    </svg>
+                    {% trans "Sign In" %}
+                </span>
             {% endelement %}
         {% endslot %}
     {% endelement %}
+    
+    <div class="mt-6 text-center border-t border-gray-200 pt-6">
+        <p class="text-gray-600">
+            New to Smart Journal? 
+            <a href="{% url 'account_signup' %}" class="text-indigo-600 hover:text-purple-600 font-bold underline">
+                Create your free account
+            </a>
+        </p>
+    </div>
+    
     {% if SOCIALACCOUNT_ENABLED %}
         {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
     {% endif %}

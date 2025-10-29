@@ -1,0 +1,491 @@
+{% extends 'layouts/blank.html' %}
+{% load static %}
+
+{% block content %}
+<div class="h-screen bg-gray-50 flex flex-col">
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <a href="{% url 'journal-list' %}" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <h1 class="text-lg font-semibold text-gray-900">New Note</h1>
+      </div>
+      
+      <div class="flex items-center space-x-3">
+        <!-- Toolbar -->
+        <div class="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+          <button type="button" id="boldBtn" class="p-2 hover:bg-white rounded transition-colors" title="Bold">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5 4v3h5.5a1.5 1.5 0 110 3H5v2h5.5a2.5 2.5 0 110 5H5v3h6.5a4.5 4.5 0 100-9 3.5 3.5 0 100-7H5z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <button type="button" id="italicBtn" class="p-2 hover:bg-white rounded transition-colors" title="Italic">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M8 5h4l-2 10H6l2-10z"/>
+            </svg>
+          </button>
+          <button type="button" id="attachBtn" class="p-2 hover:bg-white rounded transition-colors" title="Attach Files">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+            </svg>
+          </button>
+          <button type="button" id="voiceBtn" class="p-2 hover:bg-white rounded transition-colors" title="Voice Recording">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+        
+        <button type="submit" form="noteForm" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+          Save Note
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div class="flex-1 flex">
+    <div class="flex-1 max-w-4xl mx-auto">
+      <form id="noteForm" method="POST" enctype="multipart/form-data" class="h-full flex flex-col">
+        {% csrf_token %}
+        
+        <!-- Unified Editor Area -->
+        <div class="flex-1 p-8">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
+            <!-- Editor Content -->
+            <div class="flex-1 p-6">
+              <textarea 
+                id="noteEditor" 
+                name="content"
+                placeholder="# Untitled Note
+
+Start writing your note here... You can use markdown formatting:
+
+**Bold text** or *italic text*
+- Bullet points
+- [ ] Todo items
+
+Add attachments using the toolbar above."
+                class="w-full h-full resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 text-lg leading-relaxed"
+                style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; outline: none;"
+              >{{ form.content.value|default:'' }}</textarea>
+            </div>
+            
+            <!-- Attachments Area -->
+            <div id="attachmentsArea" class="border-t border-gray-100 p-4 hidden">
+              <div class="space-y-3">
+                <!-- Voice Recordings -->
+                <div id="voiceRecordings" class="hidden">
+                  <h4 class="text-sm font-medium text-gray-700 mb-2">Voice Recordings</h4>
+                  <div id="voiceList" class="space-y-2"></div>
+                </div>
+                
+                <!-- File Attachments -->
+                <div id="fileAttachments" class="hidden">
+                  <h4 class="text-sm font-medium text-gray-700 mb-2">File Attachments</h4>
+                  <div id="fileList" class="space-y-2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden File Input -->
+<input type="file" id="fileInput" name="files" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" class="hidden">
+
+<!-- Voice Recording Modal -->
+<div id="voiceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+    <div class="text-center">
+      <div class="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+        <svg id="micModalIcon" class="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      
+      <h3 class="text-lg font-semibold mb-2">Voice Recording</h3>
+      <p id="recordingStatus" class="text-gray-600 mb-4">Click to start recording</p>
+      
+      <div id="recordingTimer" class="text-2xl font-mono text-gray-900 mb-6 hidden">00:00</div>
+      
+      <div class="flex justify-center space-x-3">
+        <button type="button" id="recordBtn" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+          Start Recording
+        </button>
+        <button type="button" id="stopBtn" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors hidden">
+          Stop
+        </button>
+        <button type="button" id="cancelVoiceBtn" class="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Custom scrollbar for editor */
+#noteEditor::-webkit-scrollbar {
+  width: 8px;
+}
+
+#noteEditor::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+#noteEditor::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+#noteEditor::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Markdown-like styling for placeholder */
+#noteEditor::placeholder {
+  line-height: 1.6;
+}
+
+/* Recording animation */
+.recording-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Elements
+  const noteEditor = document.getElementById('noteEditor');
+  const attachBtn = document.getElementById('attachBtn');
+  const voiceBtn = document.getElementById('voiceBtn');
+  const boldBtn = document.getElementById('boldBtn');
+  const italicBtn = document.getElementById('italicBtn');
+  const fileInput = document.getElementById('fileInput');
+  const attachmentsArea = document.getElementById('attachmentsArea');
+  const voiceModal = document.getElementById('voiceModal');
+  const recordBtn = document.getElementById('recordBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const cancelVoiceBtn = document.getElementById('cancelVoiceBtn');
+  const recordingTimer = document.getElementById('recordingTimer');
+  const recordingStatus = document.getElementById('recordingStatus');
+  const micModalIcon = document.getElementById('micModalIcon');
+  
+  // Voice recording variables
+  let mediaRecorder;
+  let audioChunks = [];
+  let isRecording = false;
+  let recordingInterval;
+  let startTime;
+  const recordedAudios = [];
+  
+  // Auto-resize textarea
+  function autoResize() {
+    noteEditor.style.height = 'auto';
+    noteEditor.style.height = noteEditor.scrollHeight + 'px';
+  }
+  
+  noteEditor.addEventListener('input', autoResize);
+  
+  // Extract title from content
+  function extractTitle() {
+    const content = noteEditor.value;
+    const lines = content.split('\n');
+    let title = '';
+    
+    for (let line of lines) {
+      line = line.trim();
+      if (line.startsWith('# ')) {
+        title = line.substring(2).trim();
+        break;
+      } else if (line && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('*')) {
+        title = line.substring(0, 50);
+        break;
+      }
+    }
+    
+    return title || 'Untitled Note';
+  }
+  
+  // Add hidden title field before form submission
+  document.getElementById('noteForm').addEventListener('submit', function(e) {
+    const title = extractTitle();
+    
+    // Create hidden title input
+    const titleInput = document.createElement('input');
+    titleInput.type = 'hidden';
+    titleInput.name = 'title';
+    titleInput.value = title;
+    this.appendChild(titleInput);
+    
+    // Prepare voice recordings
+    prepareVoiceRecordings();
+  });
+  
+  // Toolbar functions
+  boldBtn.addEventListener('click', () => insertMarkdown('**', '**'));
+  italicBtn.addEventListener('click', () => insertMarkdown('*', '*'));
+  attachBtn.addEventListener('click', () => fileInput.click());
+  voiceBtn.addEventListener('click', () => voiceModal.classList.remove('hidden'));
+  
+  function insertMarkdown(before, after) {
+    const start = noteEditor.selectionStart;
+    const end = noteEditor.selectionEnd;
+    const selectedText = noteEditor.value.substring(start, end);
+    const replacement = before + selectedText + after;
+    
+    noteEditor.value = noteEditor.value.substring(0, start) + replacement + noteEditor.value.substring(end);
+    noteEditor.focus();
+    noteEditor.setSelectionRange(start + before.length, start + before.length + selectedText.length);
+  }
+  
+  // File handling
+  fileInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      displayFiles(files);
+      attachmentsArea.classList.remove('hidden');
+      document.getElementById('fileAttachments').classList.remove('hidden');
+    }
+  });
+  
+  function displayFiles(files) {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    
+    files.forEach((file, index) => {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+      
+      const fileType = detectFileType(file.name);
+      const fileIcon = getFileIcon(fileType);
+      
+      fileItem.innerHTML = `
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 flex items-center justify-center">
+            ${fileIcon}
+          </div>
+          <div>
+            <p class="font-medium text-gray-900 text-sm">${file.name}</p>
+            <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+          </div>
+        </div>
+        <button type="button" onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      `;
+      
+      fileList.appendChild(fileItem);
+    });
+  }
+  
+  // Voice recording
+  recordBtn.addEventListener('click', startRecording);
+  stopBtn.addEventListener('click', stopRecording);
+  cancelVoiceBtn.addEventListener('click', () => {
+    if (isRecording) stopRecording();
+    voiceModal.classList.add('hidden');
+  });
+  
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+      
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        addVoiceRecording(audioBlob, audioUrl);
+        
+        stream.getTracks().forEach(track => track.stop());
+        voiceModal.classList.add('hidden');
+      };
+      
+      mediaRecorder.start();
+      isRecording = true;
+      startTime = Date.now();
+      
+      // Update UI
+      recordBtn.classList.add('hidden');
+      stopBtn.classList.remove('hidden');
+      recordingStatus.textContent = 'Recording...';
+      recordingTimer.classList.remove('hidden');
+      micModalIcon.classList.add('recording-pulse');
+      
+      // Start timer
+      recordingInterval = setInterval(updateTimer, 1000);
+      
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Could not access microphone. Please check permissions.');
+    }
+  }
+  
+  function stopRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      isRecording = false;
+      clearInterval(recordingInterval);
+      
+      // Reset UI
+      recordBtn.classList.remove('hidden');
+      stopBtn.classList.add('hidden');
+      recordingStatus.textContent = 'Click to start recording';
+      recordingTimer.classList.add('hidden');
+      micModalIcon.classList.remove('recording-pulse');
+    }
+  }
+  
+  function updateTimer() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    recordingTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  
+  function addVoiceRecording(audioBlob, audioUrl) {
+    const recordingId = Date.now();
+    recordedAudios.push({ id: recordingId, blob: audioBlob, url: audioUrl });
+    
+    const voiceItem = document.createElement('div');
+    voiceItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+    voiceItem.innerHTML = `
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 flex items-center justify-center bg-blue-100 rounded-full">
+          <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div>
+          <p class="font-medium text-gray-900 text-sm">Voice Recording</p>
+          <audio controls class="mt-1" style="height: 24px; width: 200px;">
+            <source src="${audioUrl}" type="audio/wav">
+          </audio>
+        </div>
+      </div>
+      <button type="button" onclick="removeVoiceRecording(${recordingId})" class="text-red-500 hover:text-red-700">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+    `;
+    
+    document.getElementById('voiceList').appendChild(voiceItem);
+    document.getElementById('voiceRecordings').classList.remove('hidden');
+    attachmentsArea.classList.remove('hidden');
+  }
+  
+  // Utility functions
+  function detectFileType(filename) {
+    const ext = filename.toLowerCase().split('.').pop();
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+    const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma'];
+    const docExts = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'];
+
+    if (imageExts.includes(ext)) return 'image';
+    if (videoExts.includes(ext)) return 'video';
+    if (audioExts.includes(ext)) return 'audio';
+    if (docExts.includes(ext)) return 'document';
+    return 'other';
+  }
+  
+  function getFileIcon(type) {
+    const icons = {
+      image: '<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>',
+      video: '<svg class="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>',
+      audio: '<svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clip-rule="evenodd"/></svg>',
+      document: '<svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>',
+      other: '<svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>'
+    };
+    return icons[type] || icons.other;
+  }
+  
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+  
+  // Global functions
+  window.removeFile = function(index) {
+    const dt = new DataTransfer();
+    const files = Array.from(fileInput.files);
+    files.splice(index, 1);
+    
+    files.forEach(file => dt.items.add(file));
+    fileInput.files = dt.files;
+    
+    if (files.length === 0) {
+      document.getElementById('fileAttachments').classList.add('hidden');
+      if (recordedAudios.length === 0) {
+        attachmentsArea.classList.add('hidden');
+      }
+    } else {
+      displayFiles(files);
+    }
+  };
+  
+  window.removeVoiceRecording = function(recordingId) {
+    const index = recordedAudios.findIndex(audio => audio.id === recordingId);
+    if (index > -1) {
+      URL.revokeObjectURL(recordedAudios[index].url);
+      recordedAudios.splice(index, 1);
+    }
+    
+    const voiceItem = document.querySelector(`[onclick="removeVoiceRecording(${recordingId})"]`).closest('.flex');
+    voiceItem.remove();
+    
+    if (recordedAudios.length === 0) {
+      document.getElementById('voiceRecordings').classList.add('hidden');
+      if (fileInput.files.length === 0) {
+        attachmentsArea.classList.add('hidden');
+      }
+    }
+  };
+  
+  function prepareVoiceRecordings() {
+    const form = document.getElementById('noteForm');
+    
+    recordedAudios.forEach((audio, index) => {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'voice_recordings';
+      fileInput.style.display = 'none';
+      
+      const file = new File([audio.blob], `voice_recording_${Date.now()}_${index}.wav`, {
+        type: 'audio/wav'
+      });
+      
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      
+      form.appendChild(fileInput);
+    });
+  }
+});
+</script>
+{% endblock %}

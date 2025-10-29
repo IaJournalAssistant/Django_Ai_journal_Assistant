@@ -1,0 +1,43 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% block head_title %}
+    {% trans "Sign Out" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="text-center">
+    <div class="inline-block bg-gradient-to-br from-red-500 to-orange-500 w-20 h-20 rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg">
+        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+    </div>
+    
+    <h1 class="!text-5xl bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent mb-6">
+        Sign Out
+    </h1>
+    
+    <p class="text-xl text-gray-600 mb-8 max-w-md mx-auto">
+        Are you sure you want to sign out of your account? Your journal entries will be waiting for you when you return.
+    </p>
+
+    <form method="post" action="{% url 'account_logout' %}" class="space-y-4">
+        {% csrf_token %}
+        {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+        {% endif %}
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a href="/" class="button !bg-gray-600 hover:!bg-gray-700 px-8 py-4 text-lg font-bold rounded-lg shadow-xl">
+                Cancel
+            </a>
+            <button type="submit" class="button bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 px-8 py-4 text-lg font-bold rounded-lg shadow-xl flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                {% trans "Sign Out" %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}
+

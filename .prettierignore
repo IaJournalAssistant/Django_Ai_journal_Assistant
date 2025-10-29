@@ -1,0 +1,10 @@
+# Django Templates - Don't format these
+templates/**/*.html
+**/templates/**/*.html
+
+# Python files
+*.py
+
+# Django specific
+*.html
+

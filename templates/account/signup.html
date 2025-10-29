@@ -1,45 +1,111 @@
 {% extends "account/base_entrance.html" %}
 {% load allauth i18n %}
+
 {% block head_title %}
-    {% trans "Signup" %}
+{% trans "Signup" %}
 {% endblock head_title %}
+
 {% block content %}
-    {% element h1 %}
-        {% trans "Sign Up" %}
-    {% endelement %}
-    {% setvar link %}
-        <a href="{{ login_url }}">
-        {% endsetvar %}
-        {% setvar end_link %}
-        </a>
-    {% endsetvar %}
-    {% element p %}
-        {% blocktranslate %}Already have an account? Then please {{ link }}sign in{{ end_link }}.{% endblocktranslate %}
-    {% endelement %}
-    {% if not SOCIALACCOUNT_ONLY %}
-        {% url 'account_signup' as action_url %}
-        {% element form form=form method="post" action=action_url tags="entrance,signup" %}
-            {% slot body %}
-                {% csrf_token %}
-                {% element fields form=form unlabeled=True %}
-                {% endelement %}
-                {{ redirect_field }}
-            {% endslot %}
-            {% slot actions %}
-                {% element button tags="prominent,signup" type="submit" %}
-                    {% trans "Sign Up" %}
-                {% endelement %}
-            {% endslot %}
+<div class="text-center mb-8">
+    <div class="inline-block bg-gradient-to-br from-purple-600 to-pink-600 w-20 h-20 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
+        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+        </svg>
+    </div>
+    <h1 class="!text-5xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+        Start Your Journey
+    </h1>
+    <p class="text-gray-600 text-lg">
+        Create your free account and begin journaling smarter
+    </p>
+</div>
+
+{% setvar link %}
+<a href="{{ login_url }}">
+{% endsetvar %}
+
+{% setvar end_link %}
+</a>
+{% endsetvar %}
+
+{% if not SOCIALACCOUNT_ONLY %}
+{% url 'account_signup' as action_url %}
+{% element form form=form method="post" action=action_url tags="entrance,signup" %}
+    {% slot body %}
+        {% csrf_token %}
+        {% element fields form=form unlabeled=True %}
         {% endelement %}
-    {% endif %}
-    {% if PASSKEY_SIGNUP_ENABLED %}
-        {% element hr %}
+        {{ redirect_field }}
+    {% endslot %}
+    {% slot actions %}
+        {% element button tags="prominent,signup" type="submit" %}
+            <span class="flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% trans "Create Account" %}
+            </span>
         {% endelement %}
-        {% element button href=signup_by_passkey_url tags="prominent,signup,outline,primary" %}
-            {% trans "Sign up using a passkey" %}
-        {% endelement %}
-    {% endif %}
-    {% if SOCIALACCOUNT_ENABLED %}
-        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
-    {% endif %}
+    {% endslot %}
+{% endelement %}
+{% endif %}
+
+<div class="mt-6 text-center border-t border-gray-200 pt-6">
+    <p class="text-gray-600">
+        {% blocktranslate %}Already have an account? {{ link }}Sign in here{{ end_link }}{% endblocktranslate %}
+    </p>
+</div>
+
+{% if PASSKEY_SIGNUP_ENABLED %}
+{% element hr %}
+{% endelement %}
+{% element button href=signup_by_passkey_url tags="prominent,signup,outline,primary" %}
+    {% trans "Sign up using a passkey" %}
+{% endelement %}
+{% endif %}
+
+{% if SOCIALACCOUNT_ENABLED %}
+{% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+{% endif %}
+
+<!-- Benefits Section -->
+<div class="mt-8 pt-8 border-t border-gray-200">
+    <h3 class="text-center text-gray-700 font-bold mb-6">What you'll get:</h3>
+    <div class="space-y-4">
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-800">Unlimited Journal Entries</p>
+                <p class="text-sm text-gray-600">Write as much as you want, whenever you want</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-800">Multi-Media Attachments</p>
+                <p class="text-sm text-gray-600">Add photos, videos, audio, and documents</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <div>
+                <p class="font-semibold text-gray-800">AI-Powered Insights</p>
+                <p class="text-sm text-gray-600">Get smart suggestions and analysis (coming soon)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock content %}

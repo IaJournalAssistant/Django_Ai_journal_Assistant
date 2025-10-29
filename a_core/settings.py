@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Project title displayed in the header
-PROJECT_TITLE = "Project Title"
+PROJECT_TITLE = "Smart Journal"
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -40,18 +40,30 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'django_cleanup.apps.CleanupConfig',
     'django_htmx',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
+    'allauth.mfa',
+    'rest_framework',
+    'rest_framework.authtoken',
+    
+    
+
 
     # My apps
     'a_home',
     'a_users',
+<<<<<<< HEAD
     'a_planning',
     
     # Third party
+=======
+    'journal',
+    'media_manager',
+>>>>>>> b90bb67c0a0771d23b602f5ac79cb2a1dd2037dc
     'django_browser_reload',
 ]
 
@@ -82,7 +94,9 @@ ROOT_URLCONF = 'a_core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ BASE_DIR / 'templates' ],
+        'DIRS': [
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -104,8 +118,17 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 
 DATABASES = {
     'default': {
+<<<<<<< HEAD
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+=======
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'DjangoProject',     # 👈 name of the DB you created in pgAdmin
+        'USER': 'postgres',          # 👈 default user (or your pg username)
+        'PASSWORD': 'okba',          # 👈 your pgAdmin password
+        'HOST': 'localhost',         # 👈 or your server IP if remote
+        'PORT': '5432',              # 👈 default PostgreSQL port
+>>>>>>> b90bb67c0a0771d23b602f5ac79cb2a1dd2037dc
     }
 }
 
@@ -168,7 +191,38 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_ON_GET = False  # Require POST for logout (security)
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+# Disable email verification requirement for MFA/passkeys
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',  # for browser
+        'rest_framework.authentication.TokenAuthentication',    # for Postman or API
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
+# WebAuthn/Passkey Settings (Face Login)
+# Enables Face ID, Windows Hello, Touch ID, and security keys
+MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+MFA_PASSKEY_LOGIN_ENABLED = True
+# Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
+# We're using passkey LOGIN only (users add passkeys after signup)
+
+# ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
+# TODO: Remove this in production! Use default adapter for security
+MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+
+# ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
+# TODO: Remove this setting before deploying to production!
+# Production requires HTTPS - this is a security requirement of WebAuthn
+MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
