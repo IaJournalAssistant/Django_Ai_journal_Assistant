@@ -17,6 +17,21 @@ class JournalEntryForm(forms.ModelForm):
                 'placeholder': 'Write your journal entry...'
             }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make title optional since we extract it from content
+        self.fields['title'].required = False
 
-# We'll handle multiple files in the template/view directly
-# This form is just for reference, actual file handling is done in views
+class UnifiedNoteForm(forms.ModelForm):
+    """Form for the new unified note editor"""
+    class Meta:
+        model = JournalEntry
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'w-full h-full resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 text-lg leading-relaxed',
+                'placeholder': '# Untitled Note\n\nStart writing your note here...',
+                'style': 'font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; outline: none;'
+            }),
+        }
