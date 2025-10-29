@@ -5,3 +5,25 @@ __pycache__/
 db.sqlite3
 .env
 .DS_Store
+# Test files and coverage
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Test databases
+test_*.db
+test_*.sqlite3
+
+# Test logs
+test_*.log
