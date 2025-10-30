@@ -10,23 +10,28 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
+
 
 # Project title displayed in the header
-PROJECT_TITLE = "Project Title"
+PROJECT_TITLE = "Smart Journal"
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rj#-z^kx3j+1ay397otg6j8m_8#v^$^$jys6&41vy^&6le)ezc'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-rj#-z^kx3j+1ay397otg6j8m_8#v^$^$jys6&41vy^&6le)ezc')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [ 'https://*' ]
 
@@ -40,11 +45,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'django_cleanup.apps.CleanupConfig',
     'django_htmx',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
+    # 'allauth.mfa',  # Temporarily disabled due to cryptography issues
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -54,8 +61,13 @@ INSTALLED_APPS = [
     # My apps
     'a_home',
     'a_users',
+    'a_planning',
     'journal',
     'media_manager',
+
+
+    # Third party
+    'mood_tracker',
     'django_browser_reload',
      'chatbot',
 ]
@@ -157,17 +169,23 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [ BASE_DIR / 'static' ]
+STATIC_ROOT = os.getenv('STATIC_ROOT', BASE_DIR / 'staticfiles')
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media' 
+MEDIA_ROOT = os.getenv('MEDIA_ROOT', BASE_DIR / 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_ON_GET = False  # Require POST for logout (security)
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
+# Disable email verification requirement for MFA/passkeys
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -179,3 +197,23 @@ REST_FRAMEWORK = {
     ]
     
 }
+
+# WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED
+# Enables Face ID, Windows Hello, Touch ID, and security keys
+# MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+# MFA_PASSKEY_LOGIN_ENABLED = True
+# Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
+# We're using passkey LOGIN only (users add passkeys after signup)
+
+# ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
+# TODO: Remove this in production! Use default adapter for security
+# MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+
+# ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
+# TODO: Remove this setting before deploying to production!
+# Production requires HTTPS - this is a security requirement of WebAuthn
+# MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+
+# Ollama Configuration for AI features
+OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'gemma2:2b')

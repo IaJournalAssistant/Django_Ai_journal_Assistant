@@ -1,0 +1,267 @@
+{% extends 'layouts/box.html' %}
+{% load static %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ action }} Habit</h1>
+    <p class="text-gray-600">
+        {% if action == "Create" %}
+            Create a new habit to track your daily progress
+        {% else %}
+            Update your habit details and settings
+        {% endif %}
+    </p>
+</div>
+
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+    
+    <!-- Habit Name -->
+    <div>
+        <label for="{{ form.name.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.help_text %}
+            <p class="mt-2 text-sm text-gray-500">{{ form.name.help_text }}</p>
+        {% endif %}
+        {% if form.name.errors %}
+            <div class="mt-2">
+                {% for error in form.name.errors %}
+                    <p class="text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Description -->
+    <div>
+        <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">{{ form.description.label }}</label>
+        {{ form.description }}
+        {% if form.description.help_text %}
+            <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
+        {% endif %}
+        {% if form.description.errors %}
+            <div class="mt-2">
+                {% for error in form.description.errors %}
+                    <p class="text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Active Status -->
+    <div>
+        <div class="flex items-center space-x-3">
+            {{ form.is_active }}
+            <label for="{{ form.is_active.id_for_label }}" class="text-sm font-semibold text-gray-900">{{ form.is_active.label }}</label>
+        </div>
+        {% if form.is_active.help_text %}
+            <p class="mt-2 text-sm text-gray-500">{{ form.is_active.help_text }}</p>
+        {% endif %}
+        {% if form.is_active.errors %}
+            <div class="mt-2">
+                {% for error in form.is_active.errors %}
+                    <p class="text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Form Errors -->
+    {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            {% for error in form.non_field_errors %}
+                <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3 pt-6">
+        <button type="submit" id="submit-btn" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+            <span id="submit-text">{{ action }} Habit</span>
+            <span id="submit-loading" class="hidden">
+                <svg class="inline w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+            </span>
+        </button>
+        <a href="{% url 'mood_tracker:habit_list' %}" class="flex-1 text-center bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-all">
+            Cancel
+        </a>
+    </div>
+</form>
+
+<!-- Habit Examples -->
+{% if action == "Create" %}
+<div class="mt-8 p-4 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+    <h3 class="text-sm font-semibold text-purple-900 mb-2">Habit Ideas</h3>
+    <div class="text-sm text-purple-800 space-y-1">
+        <p>• Drink 8 glasses of water</p>
+        <p>• Exercise for 30 minutes</p>
+        <p>• Read for 20 minutes</p>
+        <p>• Meditate for 10 minutes</p>
+        <p>• Write in journal</p>
+        <p>• Take vitamins</p>
+        <p>• Practice gratitude</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Existing Habit Info -->
+{% if habit %}
+<div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <h3 class="text-sm font-semibold text-blue-900 mb-2">Habit Information</h3>
+    <div class="text-sm text-blue-800 space-y-1">
+        <p><strong>Created:</strong> {{ habit.created_at|date:"M j, Y g:i A" }}</p>
+        {% if habit.updated_at != habit.created_at %}
+            <p><strong>Last Updated:</strong> {{ habit.updated_at|date:"M j, Y g:i A" }}</p>
+        {% endif %}
+        <p><strong>Status:</strong> 
+            {% if habit.is_active %}
+                <span class="text-green-600 font-medium">Active</span>
+            {% else %}
+                <span class="text-gray-600 font-medium">Inactive</span>
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitText = document.getElementById('submit-text');
+        const submitLoading = document.getElementById('submit-loading');
+        const nameInput = document.querySelector('input[name="name"]');
+        const descriptionInput = document.querySelector('textarea[name="description"]');
+
+        // Client-side form validation
+        function validateForm() {
+            const nameValue = nameInput.value.trim();
+            const descriptionValue = descriptionInput.value.trim();
+            
+            let isValid = true;
+            let errorMessage = '';
+
+            // Clear previous error styling
+            clearErrors();
+
+            // Validate habit name
+            if (!nameValue) {
+                isValid = false;
+                errorMessage = 'Habit name is required.';
+                showFieldError('name', errorMessage);
+            } else if (nameValue.length < 2) {
+                isValid = false;
+                errorMessage = 'Habit name must be at least 2 characters long.';
+                showFieldError('name', errorMessage);
+            } else if (nameValue.length > 100) {
+                isValid = false;
+                errorMessage = 'Habit name cannot exceed 100 characters.';
+                showFieldError('name', errorMessage);
+            }
+
+            // Validate description length
+            if (descriptionValue.length > 500) {
+                isValid = false;
+                errorMessage = 'Description cannot exceed 500 characters.';
+                showFieldError('description', errorMessage);
+            }
+
+            submitBtn.disabled = !isValid;
+            return isValid;
+        }
+
+        function showFieldError(fieldName, message) {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                // Add error styling
+                field.classList.add('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'mt-2 text-sm text-red-600 client-error';
+                errorDiv.textContent = message;
+                field.parentNode.appendChild(errorDiv);
+            }
+        }
+
+        function clearErrors() {
+            // Remove error styling
+            document.querySelectorAll('.border-red-300').forEach(el => {
+                el.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            });
+
+            // Remove error messages
+            document.querySelectorAll('.client-error').forEach(el => el.remove());
+        }
+
+        // Add event listeners for real-time validation
+        nameInput.addEventListener('input', function() {
+            // Show character count
+            const charCount = this.value.length;
+            let countEl = document.getElementById('name-char-count');
+            if (!countEl) {
+                countEl = document.createElement('div');
+                countEl.id = 'name-char-count';
+                countEl.className = 'text-xs text-gray-500 mt-1';
+                this.parentNode.appendChild(countEl);
+            }
+            countEl.textContent = `${charCount}/100 characters`;
+            
+            if (charCount > 100) {
+                countEl.classList.add('text-red-600');
+                countEl.classList.remove('text-gray-500');
+            } else {
+                countEl.classList.add('text-gray-500');
+                countEl.classList.remove('text-red-600');
+            }
+            
+            validateForm();
+        });
+
+        descriptionInput.addEventListener('input', function() {
+            // Show character count
+            const charCount = this.value.length;
+            let countEl = document.getElementById('description-char-count');
+            if (!countEl) {
+                countEl = document.createElement('div');
+                countEl.id = 'description-char-count';
+                countEl.className = 'text-xs text-gray-500 mt-1';
+                this.parentNode.appendChild(countEl);
+            }
+            countEl.textContent = `${charCount}/500 characters`;
+            
+            if (charCount > 500) {
+                countEl.classList.add('text-red-600');
+                countEl.classList.remove('text-gray-500');
+            } else {
+                countEl.classList.add('text-gray-500');
+                countEl.classList.remove('text-red-600');
+            }
+            
+            validateForm();
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+        });
+
+        // Initial validation
+        validateForm();
+    });
+</script>
+
+{% endblock %}

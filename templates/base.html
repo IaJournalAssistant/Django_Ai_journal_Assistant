@@ -6,9 +6,11 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Django Template">
-    <title>Project Title</title>
+    <meta name="description" content="Smart Journal - Your AI-Powered Journaling Companion">
+    <title>Smart Journal - AI-Powered Personal Journal</title>
     <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mood-tracker-responsive.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://unpkg.com/htmx.org@2.0.2"></script>
     {% django_htmx_script %}
@@ -24,7 +26,7 @@
         p { @apply mb-4; }
 
         .button, button, [type='submit'], [type='button'] {
-            @apply bg-indigo-600 text-white font-bold rounded-lg shadow-lg transition-all cursor-pointer;
+            @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-lg transition-all cursor-pointer;
         }
         
         .button, button a, [type='submit'], [type='button'] {
@@ -32,7 +34,7 @@
         }
         
         .button:hover, button:hover, [type='submit']:hover, [type='button']:hover {
-            @apply bg-indigo-700;
+            @apply from-indigo-700 to-purple-700 shadow-xl;
         }
         
         .button:active, button:active, [type='submit']:active, [type='button']:active {
@@ -65,7 +67,9 @@
         input[type=file] { @apply bg-white pl-0; }
         input[name="remember"] { @apply w-auto; }
         
-        .textarea, textarea, input { @apply w-full rounded-lg py-4 px-5 bg-gray-100; }
+        .textarea, textarea, input { 
+            @apply w-full rounded-lg py-4 px-5 bg-gray-50 border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none; 
+        }
         
         .errorlist li { @apply p-1 pl-4 border-l-red-500 border-l-4 border-solid mb-2 text-red-500; }
         
