@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test AI Formatting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8">
+    <div id="test-output" class="max-w-4xl mx-auto"></div>
+    
+    <script>
+        function formatAIResponse(content) {
+            // First, extract just the message content from JSON if present
+            let messageContent = content;
+            
+            // Try to parse as JSON first
+            try {
+                const parsed = JSON.parse(content);
+                if (parsed.message) {
+                    messageContent = parsed.message;
+                }
+            } catch (e) {
+                // If not valid JSON, look for JSON pattern in the string
+                const jsonMatch = content.match(/\{\s*"message"\s*:\s*"([^"]*(?:\\.[^"]*)*)"\s*\}/);
+                if (jsonMatch) {
+                    messageContent = jsonMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+                }
+            }
+            
+            // Now format only the message content
+            let formatted = messageContent
+                // Format section headers with ** markers
+                .replace(/\*\*([^*]+)\*\*/g, '<div class="mb-3 mt-4"><h4 class="font-semibold text-indigo-900 text-sm bg-indigo-50 px-3 py-2 rounded-lg border-l-4 border-indigo-500">$1</h4></div>')
+                
+                // Format numbered lists
+                .replace(/(\d+\.\s)([^\n]+)/g, '<div class="flex items-start gap-2 mb-2"><span class="bg-indigo-100 text-indigo-800 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">$1</span><span class="text-gray-700">$2</span></div>')
+                
+                // Highlight priority levels
+                .replace(/\b(high priority|urgent|critical|immediate)\b/gi, '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">$1</span>')
+                .replace(/\b(medium priority|important|moderate)\b/gi, '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">$1</span>')
+                .replace(/\b(low priority|minor|optional)\b/gi, '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">$1</span>')
+                
+                // Highlight task names in quotes
+                .replace(/"([^"]+)"/g, '<span class="inline-flex items-center px-2 py-1 rounded font-medium bg-blue-100 text-blue-800">"$1"</span>')
+                
+                // Highlight deadlines and dates
+                .replace(/\b(deadline|due date|approaching|overdue)\b/gi, '<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800">$1</span>')
+                
+                // Convert line breaks to proper HTML
+                .replace(/\n/g, '<br>');
+            
+            return `<div class="space-y-2 text-gray-700 leading-relaxed">${formatted}</div>`;
+        }
+        
+        // Test with sample data
+        const testContent = '{ "message": "**Current Status Assessment** Your workload consists of 5 tasks with varying priorities. The high priority task \\"Develop homepage\\" is approaching its deadline. **Key Insights** The critical task requires immediate attention. **Actionable Recommendations** 1. Focus on homepage development 2. Allocate dedicated time blocks 3. Consider breaking down tasks" }';
+        
+        document.getElementById('test-output').innerHTML = formatAIResponse(testContent);
+    </script>
+</body>
+</html>

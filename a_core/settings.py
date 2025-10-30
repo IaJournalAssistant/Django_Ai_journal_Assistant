@@ -143,12 +143,13 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'DjangoProject',       # 👈 name of the DB you created in pgAdmin
-        'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': '123456789',  # 👈 your pgAdmin password
-        'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5432',              # 👈 default PostgreSQL port
-        
+        'NAME': os.getenv('DB_NAME', 'django_ai_journal'),
+        'USER': os.getenv('DB_USER', 'django_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'django_pass_2024'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+
+    }
 }
 
 # Cache configuration for AI insights

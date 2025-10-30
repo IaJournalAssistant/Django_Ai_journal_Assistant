@@ -141,7 +141,7 @@ class AIInsight(models.Model):
         ('recommendation', 'Recommendation'),
     ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mood_tracker_ai_insights')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mood_ai_insights')
     insight_type = models.CharField(
         max_length=20,
         choices=INSIGHT_TYPES,
