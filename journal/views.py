@@ -43,9 +43,20 @@ def journal_create(request):
             content=content
         )
         
-        # Send to n8n webhook (non-blocking)
+        # Send to n8n webhook and get AI response
         try:
-            webhook_service.send_journal_created(journal)
+            ai_response = webhook_service.send_journal_created(journal)
+            if ai_response and ai_response.get('success'):
+                # Store AI response in cache immediately
+                from django.core.cache import cache
+                cache_key = f"ai_response_{journal.id}"
+                ai_data = {
+                    'response': ai_response.get('ai_summary', ''),
+                    'type': 'analysis',
+                    'timestamp': timezone.now().isoformat(),
+                    'received_at': timezone.now().isoformat()
+                }
+                cache.set(cache_key, ai_data, timeout=3600)
         except Exception as e:
             # Log error but don't fail the journal creation
             import logging
@@ -74,13 +85,31 @@ def journal_create(request):
             if voice_file:
                 caption = request.POST.get(f'voice_caption_{i}', '')
                 
-                MediaFile.objects.create(
+                media_file = MediaFile.objects.create(
                     uploaded_by=request.user,
                     journal=journal,
                     file=voice_file,
                     file_type='audio',
                     caption=caption or 'Voice Recording'
                 )
+                
+                # Trigger transcription manually if signals don't work
+                try:
+                    from media_manager.speech_to_text import process_audio_transcription
+                    import threading
+                    
+                    # Process transcription in background thread to avoid blocking
+                    def transcribe_async():
+                        process_audio_transcription(media_file.id)
+                    
+                    thread = threading.Thread(target=transcribe_async)
+                    thread.daemon = True
+                    thread.start()
+                    
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to start transcription for media file {media_file.id}: {str(e)}")
         
         return redirect('journal-detail', pk=journal.id)
     else:
@@ -158,14 +187,7 @@ def journal_detail(request, pk):
     })
 
 
-@login_required
-def test_webhook(request):
-    """Test the n8n webhook connection"""
-    if request.method == 'POST':
-        result = webhook_service.test_webhook()
-        return JsonResponse(result)
-    
-    return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
 
 
 from django.views.decorators.csrf import csrf_exempt
@@ -200,20 +222,38 @@ def receive_ai_response(request):
         # Store the AI response (you can extend JournalEntry model or create a separate model)
         # For now, we'll use a simple approach with session storage
         
-        # Log the response
+        # Log the complete request for debugging
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Received AI response for journal {journal_id}: {ai_response[:100]}...")
         
-        # Store in cache or session for real-time display
+        # Log what n8n actually sent
+        logger.info(f"=== n8n Webhook Received ===")
+        logger.info(f"Raw request body: {request.body.decode()}")
+        logger.info(f"Parsed data: {data}")
+        logger.info(f"Journal ID: {journal_id}")
+        logger.info(f"AI Response length: {len(ai_response)}")
+        logger.info(f"Response type: {response_type}")
+        
+        # Store in cache
         from django.core.cache import cache
         cache_key = f"ai_response_{journal_id}"
-        cache.set(cache_key, {
+        
+        ai_data = {
             'response': ai_response,
             'type': response_type,
             'timestamp': data.get('timestamp'),
             'received_at': timezone.now().isoformat()
-        }, timeout=3600)  # Store for 1 hour
+        }
+        
+        logger.info(f"Storing in cache with key: {cache_key}")
+        cache.set(cache_key, ai_data, timeout=3600)
+        
+        # Verify storage
+        stored = cache.get(cache_key)
+        if stored:
+            logger.info(f"✓ Successfully stored in cache")
+        else:
+            logger.error(f"✗ Failed to store in cache")
         
         # Return success response to n8n
         return JsonResponse({
@@ -264,6 +304,43 @@ def get_ai_response(request, journal_id):
             
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+
+@login_required
+def delete_journal(request, pk):
+    """
+    Delete a journal entry
+    Only the author can delete their own journal entries
+    """
+    journal = get_object_or_404(JournalEntry, id=pk, author=request.user)
+    
+    if request.method == 'POST':
+        # Store journal title for success message
+        journal_title = journal.title
+        
+        # Delete the journal (this will also delete related media files due to CASCADE)
+        journal.delete()
+        
+        # Return JSON response for AJAX requests
+        if request.headers.get('Content-Type') == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Journal "{journal_title}" has been deleted successfully.',
+                'redirect_url': '/journal/'
+            })
+        
+        # For regular form submissions, redirect to journal list
+        from django.contrib import messages
+        messages.success(request, f'Journal "{journal_title}" has been deleted successfully.')
+        return redirect('journal-list')
+    
+    # For GET requests, show confirmation page
+    return render(request, 'journal/delete_confirm.html', {
+        'journal': journal
+    })
 
 def extract_title_from_content(content):
     """Extract title from markdown-style content"""
