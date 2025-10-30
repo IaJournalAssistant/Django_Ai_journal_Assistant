@@ -15,7 +15,13 @@
         <ul class="navitems flex items-center justify-center h-full gap-2">
             {% if request.user.is_authenticated %}
            
- <li><a href="/chatbot/">AI Assistant</a></li>
+ <li><a href="/chatbot/">Chatbot</a></li>
+<a href="{% url 'chatbotmedia:analyze_image' %}
+" 
+   class="!bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 rounded-lg text-white hover:opacity-80 transition-opacity">
+    Upload Media
+</a>
+
             <li>
                 <a href="/journal/create" class="!bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md transition-all">
                     <span class="flex items-center gap-2">
