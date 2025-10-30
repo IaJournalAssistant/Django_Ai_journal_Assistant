@@ -4,7 +4,7 @@ from django.http import JsonResponse
 
 from django.db.models import Q
 from .models import JournalEntry, Note, Tag
-from .nlp_utils import predict_tags_for_texts
+from .nlp_utils import predict_tags_for_texts, extract_potential_tag_from_text
 import logging
 from .forms import JournalEntryForm, NoteForm, TagForm
 from django.utils import timezone
@@ -216,22 +216,64 @@ def note_list(request):
     # Tag objects once and run batched prediction (spaCy pipe or fallback).
     try:
         tags_all = list(Tag.objects.all())
-        if tags_all:
-            # notes.tags is a ForeignKey on this project (single tag per note).
-            # For ForeignKey use a simple None check to detect notes without tags.
-            notes_without_tags = [n for n in notes if n.tags is None]
-            if notes_without_tags:
-                # Safety limit to avoid processing extremely large sets in one go.
-                MAX_PREDICT = 500
-                to_predict = notes_without_tags[:MAX_PREDICT]
-                contents = [getattr(n, 'content', '') or getattr(n, 'title', '') or '' for n in to_predict]
-                predicted_names = predict_tags_for_texts(contents, tags_all)
-                name_map = {t.name.lower(): t for t in tags_all}
-                for note_obj, pred_name in zip(to_predict, predicted_names):
-                    note_obj.predicted_tag = name_map.get(pred_name.lower()) if pred_name else None
-                # For notes beyond the safety limit, set predicted_tag to None
-                for n in notes_without_tags[MAX_PREDICT:]:
-                    n.predicted_tag = None
+        notes_without_tags = [n for n in notes if n.tags is None]
+        
+        if notes_without_tags:
+            # Safety limit to avoid processing extremely large sets in one go.
+            MAX_PREDICT = 500
+            to_predict = notes_without_tags[:MAX_PREDICT]
+            
+            # Combine title and content for better AI analysis
+            # This gives the AI more context to make accurate predictions
+            combined_texts = []
+            for n in to_predict:
+                title = getattr(n, 'title', '') or ''
+                content = getattr(n, 'content', '') or ''
+                # Combine title and content with title given more weight
+                combined = f"{title}. {content}" if title and content else (title or content)
+                combined_texts.append(combined)
+            
+            # Try to predict from existing tags first with higher confidence threshold
+            # min_confidence=0.5 means we need strong similarity to use existing tags
+            predicted_names = predict_tags_for_texts(combined_texts, tags_all, min_confidence=0.5) if tags_all else [None] * len(combined_texts)
+            name_map = {t.name.lower(): t for t in tags_all}
+            
+            # Process predictions and create new tags if needed
+            for note_obj, pred_name, combined_text in zip(to_predict, predicted_names, combined_texts):
+                if pred_name:
+                    # Found a match in existing tags
+                    note_obj.predicted_tag = name_map.get(pred_name.lower())
+                else:
+                    # No good match found - try to create a new tag from content
+                    new_tag_name = extract_potential_tag_from_text(combined_text)
+                    
+                    if new_tag_name:
+                        # Check if this tag name already exists (case-insensitive)
+                        existing_tag = Tag.objects.filter(name__iexact=new_tag_name).first()
+                        
+                        if existing_tag:
+                            note_obj.predicted_tag = existing_tag
+                        else:
+                            # Create new tag automatically
+                            try:
+                                new_tag = Tag.objects.create(name=new_tag_name)
+                                note_obj.predicted_tag = new_tag
+                                # Add to tags_all and name_map for subsequent notes
+                                tags_all.append(new_tag)
+                                name_map[new_tag.name.lower()] = new_tag
+                                logger = logging.getLogger(__name__)
+                                logger.info(f"AI auto-created new tag: '{new_tag_name}'")
+                            except Exception as create_error:
+                                logger = logging.getLogger(__name__)
+                                logger.warning(f"Failed to create new tag '{new_tag_name}': {str(create_error)}")
+                                note_obj.predicted_tag = None
+                    else:
+                        note_obj.predicted_tag = None
+            
+            # For notes beyond the safety limit, set predicted_tag to None
+            for n in notes_without_tags[MAX_PREDICT:]:
+                n.predicted_tag = None
+        
         # Ensure every note has the attribute (templates may expect it)
         for n in notes:
             if not hasattr(n, 'predicted_tag'):

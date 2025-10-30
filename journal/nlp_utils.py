@@ -106,13 +106,14 @@ def _token_overlap_score(a: str, b: str) -> float:
     return len(a_tok & b_tok) / float(len(a_tok | b_tok))
 
 
-def predict_tags_for_texts(texts: Iterable[str], tag_objs: Iterable, top_k: int = 1) -> List[Optional[str]]:
+def predict_tags_for_texts(texts: Iterable[str], tag_objs: Iterable, top_k: int = 1, min_confidence: float = 0.3) -> List[Optional[str]]:
     """Predict best tag name for each text in `texts`.
 
     Args:
         texts: iterable of text strings (note content)
         tag_objs: iterable of Tag model instances (should have .name)
         top_k: reserved for future use (currently returns single best)
+        min_confidence: minimum confidence score (0.0-1.0) to return a prediction
 
     Returns:
         list of tag names (matching Tag.name) or None for no confident match.
@@ -190,11 +191,11 @@ def predict_tags_for_texts(texts: Iterable[str], tag_objs: Iterable, top_k: int 
                     best_score = score
                     best_idx = i
 
-            # Heuristic threshold: if similarity/overlap is extremely low treat as None
+            # Heuristic threshold: if similarity/overlap is below min_confidence treat as None
             if best_idx is None:
                 results.append(None)
             else:
-                if best_score <= 0.05:  # very low confidence
+                if best_score < min_confidence:  # below confidence threshold
                     results.append(None)
                 else:
                     results.append(tag_names[best_idx])
@@ -204,17 +205,26 @@ def predict_tags_for_texts(texts: Iterable[str], tag_objs: Iterable, top_k: int 
     # Fallback: keyword/substring + token overlap
     lower_tag_names = [n.lower() for n in tag_names]
     results = []
-    for text in texts:
+    for idx, text in enumerate(texts):
         if not text:
             results.append(None)
             continue
+        
+        # If keyword-based result exists for this text, prefer it
+        if results_by_keyword[idx] is not None:
+            results.append(results_by_keyword[idx])
+            continue
+            
         tl = text.lower()
-        # Prefer direct substring match
+        # Prefer direct substring match (exact word boundary match only)
         matched = None
         for i, tn in enumerate(lower_tag_names):
-            if tn and tn in tl:
-                matched = tag_names[i]
-                break
+            if tn and len(tn) >= 3:
+                # Use word boundary to avoid false matches
+                pattern = r'\b' + re.escape(tn) + r'\b'
+                if re.search(pattern, tl):
+                    matched = tag_names[i]
+                    break
         if matched:
             results.append(matched)
             continue
@@ -227,7 +237,7 @@ def predict_tags_for_texts(texts: Iterable[str], tag_objs: Iterable, top_k: int 
             if score > best_score:
                 best_score = score
                 best_idx = i
-        if best_idx is not None and best_score > 0.15:
+        if best_idx is not None and best_score >= min_confidence:
             results.append(tag_names[best_idx])
         else:
             results.append(None)
@@ -243,3 +253,95 @@ def predict_tag(text: str, tag_objs: Optional[Iterable] = None) -> Optional[str]
     if not text:
         return None
     return predict_tags_for_texts([text], tag_objs or [], top_k=1)[0]
+
+
+def extract_potential_tag_from_text(text: str) -> Optional[str]:
+    """Extract a potential new tag name from text when no existing tags match.
+    
+    Uses NLP to identify the main topic/theme and suggests a tag name.
+    
+    Args:
+        text: The text content to analyze
+        
+    Returns:
+        A suggested tag name (capitalized) or None if no good candidate found
+    """
+    if not text or len(text.strip()) < 3:
+        return None
+    
+    nlp = _load_nlp()
+    
+    # Common words to ignore when creating tags
+    STOPWORDS = {
+        'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+        'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during',
+        'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further',
+        'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all',
+        'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+        'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can',
+        'will', 'just', 'should', 'now', 'i', 'me', 'my', 'myself', 'we', 'our',
+        'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves',
+        'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it',
+        'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what',
+        'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is',
+        'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+        'having', 'do', 'does', 'did', 'doing'
+    }
+    
+    if nlp is not None:
+        try:
+            doc = nlp(text[:500])  # Analyze first 500 chars for performance
+            
+            # Try to find important nouns, proper nouns, or key phrases
+            candidates = []
+            
+            # Look for nouns and proper nouns
+            for token in doc:
+                if token.pos_ in ('NOUN', 'PROPN') and token.text.lower() not in STOPWORDS:
+                    if len(token.text) >= 3 and token.text.isalpha():
+                        candidates.append(token.text.capitalize())
+            
+            # Look for noun chunks (phrases)
+            for chunk in doc.noun_chunks:
+                # Get the root of the noun chunk
+                root = chunk.root.text
+                if root.lower() not in STOPWORDS and len(root) >= 3 and root.isalpha():
+                    candidates.append(root.capitalize())
+            
+            # Return the most relevant candidate
+            if candidates:
+                # Prefer the most common candidate (appears multiple times)
+                from collections import Counter
+                counter = Counter(candidates)
+                most_common_word, count = counter.most_common(1)[0]
+                # Only return if it appears at least twice OR is a proper noun
+                if count >= 2:
+                    return most_common_word
+                # Check if it's a proper noun (more likely to be a specific topic)
+                for token in doc:
+                    if token.text.capitalize() == most_common_word and token.pos_ == 'PROPN':
+                        return most_common_word
+                
+        except Exception as e:
+            logger.debug("spaCy extraction failed: %s", e)
+    
+    # Fallback: simple word frequency analysis
+    words = text.lower().split()
+    word_freq = {}
+    
+    for word in words:
+        # Clean the word
+        word = re.sub(r'[^\w\s]', '', word)
+        if (len(word) >= 4 and  # Require at least 4 chars for better quality
+            word.isalpha() and 
+            word not in STOPWORDS):
+            word_freq[word] = word_freq.get(word, 0) + 1
+    
+    if word_freq:
+        # Get the most frequent meaningful word
+        most_common = max(word_freq.items(), key=lambda x: x[1])
+        # Require at least 3 occurrences for high confidence
+        if most_common[1] >= 3:
+            return most_common[0].capitalize()
+    
+    return None
