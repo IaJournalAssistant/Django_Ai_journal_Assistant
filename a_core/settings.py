@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    # 'allauth.mfa',  # Temporarily disabled due to cryptography issues
+    'allauth.mfa',  
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -69,6 +69,8 @@ INSTALLED_APPS = [
     # Third party
     'mood_tracker',
     'django_browser_reload',
+    'django_filters',
+
 ]
 
 SITE_ID = 1
@@ -123,9 +125,9 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'DjangoProjectIaJournal'),
+        'NAME': os.getenv('DB_NAME', 'DjangoProject'),
         'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '123456'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'okba'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
@@ -210,19 +212,19 @@ REST_FRAMEWORK = {
 
 # WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED
 # Enables Face ID, Windows Hello, Touch ID, and security keys
-# MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
-# MFA_PASSKEY_LOGIN_ENABLED = True
+MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+MFA_PASSKEY_LOGIN_ENABLED = True
 # Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
 # We're using passkey LOGIN only (users add passkeys after signup)
 
 # ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
 # TODO: Remove this in production! Use default adapter for security
-# MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
 
 # ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
 # TODO: Remove this setting before deploying to production!
 # Production requires HTTPS - this is a security requirement of WebAuthn
-# MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 
 # Ollama Configuration for AI features
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
