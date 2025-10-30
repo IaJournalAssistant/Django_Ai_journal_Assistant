@@ -17,27 +17,46 @@
       
       <div class="flex items-center space-x-3">
         <!-- Toolbar -->
-        <div class="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
-          <button type="button" id="boldBtn" class="p-2 hover:bg-white rounded transition-colors" title="Bold">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M5 4v3h5.5a1.5 1.5 0 110 3H5v2h5.5a2.5 2.5 0 110 5H5v3h6.5a4.5 4.5 0 100-9 3.5 3.5 0 100-7H5z" clip-rule="evenodd"/>
-            </svg>
-          </button>
-          <button type="button" id="italicBtn" class="p-2 hover:bg-white rounded transition-colors" title="Italic">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M8 5h4l-2 10H6l2-10z"/>
-            </svg>
-          </button>
-          <button type="button" id="attachBtn" class="p-2 hover:bg-white rounded transition-colors" title="Attach Files">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-            </svg>
-          </button>
-          <button type="button" id="voiceBtn" class="p-2 hover:bg-white rounded transition-colors" title="Voice Recording">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
-            </svg>
-          </button>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+            <button type="button" id="boldBtn" class="p-2 hover:bg-white rounded transition-colors group" title="Bold (Ctrl+B)">
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 4v3h5.5a1.5 1.5 0 110 3H5v2h5.5a2.5 2.5 0 110 5H5v3h6.5a4.5 4.5 0 100-9 3.5 3.5 0 100-7H5z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+            <button type="button" id="italicBtn" class="p-2 hover:bg-white rounded transition-colors group" title="Italic (Ctrl+I)">
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 5h4l-2 10H6l2-10z"/>
+              </svg>
+            </button>
+            <button type="button" id="headingBtn" class="p-2 hover:bg-white rounded transition-colors group" title="Heading">
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+              </svg>
+            </button>
+            <button type="button" id="listBtn" class="p-2 hover:bg-white rounded transition-colors group" title="List">
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+              </svg>
+            </button>
+            
+            <div class="w-px h-6 bg-gray-300 mx-1"></div>
+            
+            <button type="button" id="attachBtn" class="p-2 hover:bg-white rounded transition-colors group" title="Attach Files">
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+              </svg>
+            </button>
+            <button type="button" id="voiceBtn" class="p-2 hover:bg-white rounded transition-colors group" title="Voice Recording">
+              <svg class="w-4 h-4 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="text-xs text-gray-500">
+            Markdown supported
+          </div>
         </div>
         
         <button type="submit" form="noteForm" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
@@ -56,22 +75,34 @@
         <!-- Unified Editor Area -->
         <div class="flex-1 p-8">
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
+            <!-- Title Input -->
+            <div class="px-6 pt-6 pb-2 border-b border-gray-100">
+              <input 
+                type="text" 
+                id="titleInput" 
+                name="title"
+                placeholder="Enter your journal title..."
+                class="w-full text-2xl font-bold border-0 focus:ring-0 text-gray-900 placeholder-gray-400 bg-transparent"
+                style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; outline: none;"
+              />
+            </div>
+
             <!-- Editor Content -->
             <div class="flex-1 p-6">
               <textarea 
                 id="noteEditor" 
                 name="content"
-                placeholder="# Untitled Note
+                placeholder="Start writing your journal entry here...
 
-Start writing your note here... You can use markdown formatting:
+You can use markdown formatting:
+• **Bold text** or *italic text*
+• Create lists and bullet points
+• Add links and references
+• Use headers with ## or ###
 
-**Bold text** or *italic text*
-- Bullet points
-- [ ] Todo items
-
-Add attachments using the toolbar above."
+Your thoughts and experiences matter. Write freely!"
                 class="w-full h-full resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 text-lg leading-relaxed"
-                style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; outline: none;"
+                style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; outline: none; min-height: 400px;"
               >{{ form.content.value|default:'' }}</textarea>
             </div>
             
@@ -138,7 +169,7 @@ Add attachments using the toolbar above."
 }
 
 #noteEditor::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f8fafc;
 }
 
 #noteEditor::-webkit-scrollbar-thumb {
@@ -150,9 +181,22 @@ Add attachments using the toolbar above."
   background: #94a3b8;
 }
 
+/* Title input styling */
+#titleInput::-webkit-scrollbar {
+  display: none;
+}
+
+#titleInput {
+  scrollbar-width: none;
+}
+
 /* Markdown-like styling for placeholder */
 #noteEditor::placeholder {
-  line-height: 1.6;
+  line-height: 1.7;
+}
+
+#titleInput::placeholder {
+  color: #9ca3af;
 }
 
 /* Recording animation */
@@ -163,6 +207,24 @@ Add attachments using the toolbar above."
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Focus states */
+#titleInput:focus,
+#noteEditor:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Toolbar button hover effects */
+.group:hover svg {
+  transform: scale(1.05);
+  transition: transform 0.1s ease-in-out;
 }
 </style>
 
@@ -200,36 +262,26 @@ document.addEventListener('DOMContentLoaded', function() {
   
   noteEditor.addEventListener('input', autoResize);
   
-  // Extract title from content
-  function extractTitle() {
-    const content = noteEditor.value;
-    const lines = content.split('\n');
-    let title = '';
-    
-    for (let line of lines) {
-      line = line.trim();
-      if (line.startsWith('# ')) {
-        title = line.substring(2).trim();
-        break;
-      } else if (line && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('*')) {
-        title = line.substring(0, 50);
-        break;
-      }
-    }
-    
-    return title || 'Untitled Note';
-  }
-  
-  // Add hidden title field before form submission
+  // Handle form submission
   document.getElementById('noteForm').addEventListener('submit', function(e) {
-    const title = extractTitle();
+    const titleInput = document.getElementById('titleInput');
+    const content = noteEditor.value;
     
-    // Create hidden title input
-    const titleInput = document.createElement('input');
-    titleInput.type = 'hidden';
-    titleInput.name = 'title';
-    titleInput.value = title;
-    this.appendChild(titleInput);
+    // Auto-generate title if empty
+    if (!titleInput.value.trim()) {
+      const lines = content.split('\n');
+      let autoTitle = 'Untitled Journal Entry';
+      
+      for (let line of lines) {
+        line = line.trim();
+        if (line && !line.startsWith('#') && !line.startsWith('-') && !line.startsWith('*')) {
+          autoTitle = line.substring(0, 60) + (line.length > 60 ? '...' : '');
+          break;
+        }
+      }
+      
+      titleInput.value = autoTitle;
+    }
     
     // Prepare voice recordings
     prepareVoiceRecordings();
@@ -238,8 +290,29 @@ document.addEventListener('DOMContentLoaded', function() {
   // Toolbar functions
   boldBtn.addEventListener('click', () => insertMarkdown('**', '**'));
   italicBtn.addEventListener('click', () => insertMarkdown('*', '*'));
+  document.getElementById('headingBtn').addEventListener('click', () => insertMarkdown('## ', ''));
+  document.getElementById('listBtn').addEventListener('click', () => insertMarkdown('- ', ''));
   attachBtn.addEventListener('click', () => fileInput.click());
-  voiceBtn.addEventListener('click', () => voiceModal.classList.remove('hidden'));
+  voiceBtn.addEventListener('click', () => {
+    console.log('Voice button clicked');
+    voiceModal.classList.remove('hidden');
+  });
+  
+  // Keyboard shortcuts
+  noteEditor.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch(e.key) {
+        case 'b':
+          e.preventDefault();
+          insertMarkdown('**', '**');
+          break;
+        case 'i':
+          e.preventDefault();
+          insertMarkdown('*', '*');
+          break;
+      }
+    }
+  });
   
   function insertMarkdown(before, after) {
     const start = noteEditor.selectionStart;
@@ -295,7 +368,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Voice recording
-  recordBtn.addEventListener('click', startRecording);
+  recordBtn.addEventListener('click', () => {
+    console.log('Record button clicked');
+    startRecording();
+  });
   stopBtn.addEventListener('click', stopRecording);
   cancelVoiceBtn.addEventListener('click', () => {
     if (isRecording) stopRecording();
@@ -303,8 +379,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   async function startRecording() {
+    console.log('Starting recording...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone access granted');
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
       
@@ -364,8 +442,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function addVoiceRecording(audioBlob, audioUrl) {
+    console.log('Adding voice recording to list');
     const recordingId = Date.now();
     recordedAudios.push({ id: recordingId, blob: audioBlob, url: audioUrl });
+    console.log('Total recordings:', recordedAudios.length);
     
     const voiceItem = document.createElement('div');
     voiceItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
@@ -467,9 +547,11 @@ document.addEventListener('DOMContentLoaded', function() {
   };
   
   function prepareVoiceRecordings() {
+    console.log('Preparing voice recordings for submission:', recordedAudios.length);
     const form = document.getElementById('noteForm');
     
     recordedAudios.forEach((audio, index) => {
+      console.log(`Processing voice recording ${index + 1}`);
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
       fileInput.name = 'voice_recordings';

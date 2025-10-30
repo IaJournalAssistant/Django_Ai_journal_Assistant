@@ -35,6 +35,19 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [ 'https://*' ]
 
+# Cache configuration for AI responses
+# Using file-based cache for development (works across processes)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'cache',
+        'TIMEOUT': 3600,  # 1 hour default
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
 
 # Application definition
 
@@ -51,7 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    # 'allauth.mfa',  # Temporarily disabled due to cryptography issues
+    'allauth.mfa',  
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -69,6 +82,8 @@ INSTALLED_APPS = [
     # Third party
     'mood_tracker',
     'django_browser_reload',
+    'django_filters',
+
 ]
 
 SITE_ID = 1
@@ -128,6 +143,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', 'django_pass_2024'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+
     }
 }
 
@@ -195,8 +211,22 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 
+
+# Custom account adapter (not using custom signup form anymore)
+# ACCOUNT_ADAPTER = 'a_users.adapter.CustomAccountAdapter'
+# ACCOUNT_FORMS = {
+#     'signup': 'a_users.adapter.CustomSignupForm',
+# }
+
+# Disable passkey/security key features (requires HTTPS or localhost)
+MFA_PASSKEY_LOGIN_ENABLED = False
+MFA_PASSKEY_SIGNUP_ENABLED = False
+
 # Disable email verification requirement for MFA/passkeys
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
+
+# Ollama AI Configuration for bio generation
+OLLAMA_MODEL = 'gemma2:2b'  # Using the model from docker-compose.yml
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -210,19 +240,19 @@ REST_FRAMEWORK = {
 
 # WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED
 # Enables Face ID, Windows Hello, Touch ID, and security keys
-# MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
-# MFA_PASSKEY_LOGIN_ENABLED = True
+MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+MFA_PASSKEY_LOGIN_ENABLED = True
 # Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
 # We're using passkey LOGIN only (users add passkeys after signup)
 
 # ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
 # TODO: Remove this in production! Use default adapter for security
-# MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
 
 # ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
 # TODO: Remove this setting before deploying to production!
 # Production requires HTTPS - this is a security requirement of WebAuthn
-# MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 
 # Ollama Configuration for AI features
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')

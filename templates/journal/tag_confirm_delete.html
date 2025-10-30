@@ -1,0 +1,13 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-xl mx-auto px-6 py-8">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-4">Delete Tag</h1>
+    <p class="mb-4">Are you sure you want to delete "{{ tag.name }}"? This action cannot be undone.</p>
+    <form method="post" class="flex gap-2">{% csrf_token %}
+      <button type="submit" class="button alert">Yes, delete</button>
+      <a href="{% url 'tag-list' %}" class="button button-gray">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

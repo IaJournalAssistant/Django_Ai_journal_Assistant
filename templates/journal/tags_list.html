@@ -1,0 +1,32 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-10">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold">Tags</h1>
+      <p class="text-sm text-gray-500 mt-1">Manage your tag list used when labeling notes.</p>
+    </div>
+    <a href="{% url 'tag-create' %}" class="button">New Tag</a>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {% for tag in tags %}
+      <div class="card flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-700 font-semibold">{{ tag.name|slice:":1"|upper }}</div>
+          <div>
+            <div class="text-lg font-medium">{{ tag.name }}</div>
+            <div class="text-xs text-gray-500">Created: {{ tag.created_at|date:"Y-m-d" }}</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a class="button button-gray" href="{% url 'tag-edit' tag.slug %}">Edit</a>
+          <a class="button alert" href="{% url 'tag-delete' tag.slug %}">Delete</a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="p-8 bg-white rounded-lg shadow text-gray-600 text-center">No tags found. Create one to get started.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
