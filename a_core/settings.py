@@ -197,12 +197,21 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 
+# Custom account adapter (not using custom signup form anymore)
+# ACCOUNT_ADAPTER = 'a_users.adapter.CustomAccountAdapter'
+# ACCOUNT_FORMS = {
+#     'signup': 'a_users.adapter.CustomSignupForm',
+# }
+
 # Disable passkey/security key features (requires HTTPS or localhost)
 MFA_PASSKEY_LOGIN_ENABLED = False
 MFA_PASSKEY_SIGNUP_ENABLED = False
 
 # Disable email verification requirement for MFA/passkeys
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
+
+# Ollama AI Configuration for bio generation
+OLLAMA_MODEL = 'gemma2:2b'  # Using the model from docker-compose.yml
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
