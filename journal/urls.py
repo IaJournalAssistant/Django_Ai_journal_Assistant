@@ -34,21 +34,19 @@ urlpatterns = [
     path('tags/<slug:slug>/edit/', tag_edit, name='tag-edit'),
     path('tags/<slug:slug>/delete/', tag_delete, name='tag-delete'),
 
-    # API endpoints (optional) - keep viewset access as separate endpoints if needed
-    path('api/', JournalEntryViewSet.as_view({'get': 'list', 'post': 'create'})),
+    # API endpoints (ViewSet)
+    path('api/', JournalEntryViewSet.as_view({'get': 'list', 'post': 'create'}), name='api-journal-list'),
     path('api/<int:pk>/', JournalEntryViewSet.as_view({
-    path('<int:pk>/delete/', delete_journal, name='journal-delete'),
-    
-    # AI response endpoints
-    path('ai-response/', receive_ai_response, name='receive-ai-response'),  # For n8n to send data
-    path('ai-response/<int:journal_id>/', get_ai_response, name='get-ai-response'),  # For frontend to check
-    
-    # API endpoints mapped to same URLs
-    path('', JournalEntryViewSet.as_view({'get': 'list', 'post': 'create'})),
-    path('<int:pk>/', JournalEntryViewSet.as_view({
         'get': 'retrieve',
         'put': 'update',
         'patch': 'partial_update',
         'delete': 'destroy'
-    })),
+    }), name='api-journal-detail'),
+
+    # Delete journal (function-based)
+    path('<int:pk>/delete/', delete_journal, name='journal-delete'),
+
+    # AI response endpoints
+    path('ai-response/', receive_ai_response, name='receive-ai-response'),  # For n8n to send data
+    path('ai-response/<int:journal_id>/', get_ai_response, name='get-ai-response'),  # For frontend to check
 ]
