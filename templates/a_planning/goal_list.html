@@ -1,0 +1,124 @@
+{% extends 'a_planning/base_planning.html' %}
+{% load static %}
+
+{% block planning_content %}
+<div x-data="{ activeTab: 'goals' }">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Goals</h1>
+                <p class="text-gray-600 mt-1">Set and track your personal and professional goals</p>
+            </div>
+            <a href="{% url 'planning:goal-create' %}" class="button bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-all">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    New Goal
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Goals Grid -->
+    {% if goals %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for goal in goals %}
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all overflow-hidden">
+                <!-- Goal Header -->
+                <div class="p-6 border-b border-gray-100">
+                    <div class="flex items-start justify-between mb-3">
+                        <h3 class="text-xl font-bold text-gray-900 flex-1">{{ goal.title }}</h3>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ml-3 {% if goal.status == 'active' %}bg-blue-100 text-blue-700{% elif goal.status == 'achieved' %}bg-green-100 text-green-700{% elif goal.status == 'paused' %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ goal.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    {% if goal.description %}
+                    <p class="text-gray-600 text-sm mb-4">{{ goal.description|truncatewords:15 }}</p>
+                    {% endif %}
+                    
+                    <!-- Progress Circle -->
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="relative w-20 h-20">
+                            <svg class="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+                                <circle cx="50" cy="50" r="40" stroke="#ec4899" stroke-width="8" fill="none" 
+                                        stroke-dasharray="{{ goal.progress_percentage|floatformat:0 }} 100" 
+                                        stroke-linecap="round" class="transition-all duration-300"/>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-lg font-bold text-gray-900">{{ goal.progress_percentage }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Goal Details -->
+                <div class="p-6">
+                    <!-- Target Date -->
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm text-gray-600">Target Date:</span>
+                        <span class="text-sm font-medium {% if goal.is_overdue %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ goal.target_date|date:"M j, Y" }}
+                        </span>
+                    </div>
+                    
+                    <!-- Time Remaining -->
+                    {% if goal.days_until_target is not None %}
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm text-gray-600">Time Remaining:</span>
+                        {% if goal.days_until_target > 0 %}
+                            <span class="text-sm px-2 py-1 rounded-full {% if goal.days_until_target <= 7 %}bg-orange-100 text-orange-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {{ goal.days_until_target }} days
+                            </span>
+                        {% elif goal.days_until_target == 0 %}
+                            <span class="text-sm px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">
+                                Due today
+                            </span>
+                        {% else %}
+                            <span class="text-sm px-2 py-1 rounded-full bg-red-100 text-red-700">
+                                Overdue
+                            </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Success Criteria Preview -->
+                    {% if goal.success_criteria %}
+                    <div class="mb-4">
+                        <span class="text-sm text-gray-600">Success Criteria:</span>
+                        <p class="text-sm text-gray-700 mt-1 bg-pink-50 p-2 rounded">{{ goal.success_criteria|truncatewords:10 }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Button -->
+                    <a href="{% url 'planning:goal-detail' goal.id %}" class="w-full bg-gradient-to-r from-pink-100 to-rose-100 hover:from-pink-200 hover:to-rose-200 text-pink-700 font-medium py-2 px-4 rounded-lg transition-all text-center block">
+                        View Goal
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+            <div class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No goals found</h3>
+                <p class="text-gray-600 mb-6">Start achieving more by setting your first goal.</p>
+                <a href="{% url 'planning:goal-create' %}" class="button bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition-all">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Set Your First Goal
+                    </span>
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

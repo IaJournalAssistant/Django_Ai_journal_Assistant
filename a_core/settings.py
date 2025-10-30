@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'allauth.mfa',
+    # 'allauth.mfa',  # Temporarily disabled due to cryptography issues
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -61,8 +61,12 @@ INSTALLED_APPS = [
     # My apps
     'a_home',
     'a_users',
+    'a_planning',
     'journal',
     'media_manager',
+
+
+    # Third party
     'mood_tracker',
     'django_browser_reload',
 ]
@@ -116,7 +120,6 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# Database configuration - PostgreSQL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -142,6 +145,7 @@ CACHES = {
 
 
 # Password validation
+# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -179,7 +183,7 @@ STATICFILES_DIRS = [ BASE_DIR / 'static' ]
 STATIC_ROOT = os.getenv('STATIC_ROOT', BASE_DIR / 'staticfiles')
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = os.getenv('MEDIA_ROOT', BASE_DIR / 'media') 
+MEDIA_ROOT = os.getenv('MEDIA_ROOT', BASE_DIR / 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -204,21 +208,21 @@ REST_FRAMEWORK = {
     ]
 }
 
-# WebAuthn/Passkey Settings (Face Login)
+# WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED
 # Enables Face ID, Windows Hello, Touch ID, and security keys
-MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
-MFA_PASSKEY_LOGIN_ENABLED = True
+# MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+# MFA_PASSKEY_LOGIN_ENABLED = True
 # Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
 # We're using passkey LOGIN only (users add passkeys after signup)
 
 # ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
 # TODO: Remove this in production! Use default adapter for security
-MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+# MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
 
 # ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
 # TODO: Remove this setting before deploying to production!
 # Production requires HTTPS - this is a security requirement of WebAuthn
-MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+# MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
 
 # Ollama Configuration for AI features
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')

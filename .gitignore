@@ -1,4 +1,13 @@
+# Virtual environments
 venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Node.js
 node/
 media/
 __pycache__/
@@ -6,6 +15,37 @@ db.sqlite3
 .env
 .env.docker
 .DS_Store
+# Test files and coverage
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Test databases
+test_*.db
+test_*.sqlite3
+
+# Test logs
+test_*.log
+
+# Project specific
+*.sqlite3-journal
+migrations/__pycache__/
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# VS Code specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
 
 # Docker
 data/
@@ -13,3 +53,38 @@ staticfiles/
 
 # Ollama
 .ollama/
+
+# PyCharm specific
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries
+.idea/shelf
+
+# Local development
+local_settings.py
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Static files (if collected)
+/static/
+/staticfiles/
+
+# Media files (user uploads)
+/media/
+
+# Documentation builds
+docs/_build/
+
+# Kiro IDE specific (if any)
+.kiro/cache/
+.kiro/temp/
+
+# Include directory (seems to be Python related)
+Include/
+
+# Data files that might be temporary
+data.json
+*.json.bak
