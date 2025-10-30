@@ -29,6 +29,7 @@ urlpatterns = [
     path('@<username>/', profile_view, name="profile"),
     path('journal/', include('journal.urls')),  # Single journal entry point
     path('media/', include('media_manager.urls')),  # Media manager entry point
+    path('tracker/', include('mood_tracker.urls')),  # Mood and habit tracker entry point
 ]
 
 # Only used when DEBUG=True, whitenoise can serve files when DEBUG=False

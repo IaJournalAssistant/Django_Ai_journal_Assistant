@@ -1,0 +1,270 @@
+{% extends 'layouts/blank.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header -->
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">Mood & Habit Tracker</h1>
+            <p class="text-base sm:text-lg text-gray-600">Track your daily mood and build positive habits</p>
+            
+            {% if dashboard_error %}
+                <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-red-400 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <h3 class="text-sm font-medium text-red-800">Dashboard Loading Error</h3>
+                            <p class="text-sm text-red-700 mt-1">{{ error_message|default:"Some features may not be available. Please refresh the page or try again later." }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+            <!-- Today's Mood Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Today's Mood</h3>
+                    <div class="bg-gradient-to-br from-blue-100 to-indigo-100 w-12 h-12 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m-10 5.5a7.5 7.5 0 1115 0H3z"/>
+                        </svg>
+                    </div>
+                </div>
+                {% if today_mood %}
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-indigo-600 mb-1">{{ today_mood.mood_level }}/5</div>
+                        <div class="text-sm text-gray-600 mb-2">{{ today_mood.get_mood_label_display }}</div>
+                        {% if today_mood.notes %}
+                            <p class="text-xs text-gray-500 italic">"{{ today_mood.notes|truncatechars:50 }}"</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <div class="text-gray-400 mb-3">Not logged yet</div>
+                        <a href="{% url 'mood_tracker:mood_log' %}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all">
+                            Log Mood
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Mood Streak Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Mood Streak</h3>
+                    <div class="bg-gradient-to-br from-green-100 to-emerald-100 w-12 h-12 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-emerald-600 mb-1">{{ mood_streak }}</div>
+                    <div class="text-sm text-gray-600">consecutive days</div>
+                </div>
+            </div>
+
+            <!-- Active Habits Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Active Habits</h3>
+                    <div class="bg-gradient-to-br from-purple-100 to-pink-100 w-12 h-12 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600 mb-1">{{ habit_stats|length }}</div>
+                    <div class="text-sm text-gray-600">habits tracking</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+            <!-- Mood Trend Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">7-Day Mood Trend</h3>
+                    <a href="{% url 'mood_tracker:mood_log' %}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                        Log Mood →
+                    </a>
+                </div>
+                
+                {% if recent_moods %}
+                    <div class="space-y-3">
+                        {% for mood in recent_moods %}
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                                        {{ mood.mood_level }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ mood.get_mood_label_display }}</div>
+                                        <div class="text-xs text-gray-500">{{ mood.date|date:"M j" }}</div>
+                                    </div>
+                                </div>
+                                {% if mood.notes %}
+                                    <div class="text-xs text-gray-500 max-w-32 truncate">{{ mood.notes }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="text-gray-400 mb-4">No mood entries yet</div>
+                        <a href="{% url 'mood_tracker:mood_log' %}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all">
+                            Start Tracking
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Daily Habits Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Today's Habits</h3>
+                    <a href="{% url 'mood_tracker:habit_list' %}" class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                        Manage Habits →
+                    </a>
+                </div>
+                
+                {% if habit_stats %}
+                    <div class="space-y-3">
+                        {% for stat in habit_stats %}
+                            <div class="habit-item" id="habit-{{ stat.habit.id }}">
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <button 
+                                                hx-post="{% url 'mood_tracker:habit_toggle' stat.habit.id %}"
+                                                hx-target="#habit-{{ stat.habit.id }}"
+                                                hx-swap="outerHTML"
+                                                class="w-8 h-8 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all
+                                                    {% if stat.today_log and stat.today_log.completed %}
+                                                        bg-green-500 border-green-500 hover:bg-green-600
+                                                    {% else %}
+                                                        border-gray-300 hover:border-green-400
+                                                    {% endif %}">
+                                                {% if stat.today_log and stat.today_log.completed %}
+                                                    <svg class="w-5 h-5 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900">{{ stat.habit.name }}</div>
+                                            <div class="text-xs text-gray-500">
+                                                {% if stat.current_streak > 0 %}
+                                                    🔥 {{ stat.current_streak }} day streak
+                                                {% else %}
+                                                    No current streak
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-gray-500">7d: {{ stat.completion_rate_7d|floatformat:0 }}%</div>
+                                        <div class="text-xs text-gray-400">30d: {{ stat.completion_rate_30d|floatformat:0 }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="text-gray-400 mb-4">No habits created yet</div>
+                        <a href="{% url 'mood_tracker:habit_create' %}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                            Create First Habit
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- AI Insights Section -->
+        <div class="mt-8 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">AI Insights</h3>
+                <a href="{% url 'mood_tracker:insights' %}" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                    View All →
+                </a>
+            </div>
+            
+            {% if latest_insights %}
+                <div class="grid grid-cols-1 gap-4 mb-4">
+                    {% for insight in latest_insights %}
+                        <div class="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-medium text-indigo-600 uppercase tracking-wide">{{ insight.get_insight_type_display }}</span>
+                                <span class="text-xs text-gray-500">{{ insight.generated_at|date:"M j" }}</span>
+                            </div>
+                            <p class="text-sm text-gray-700">{{ insight.content|truncatechars:120 }}</p>
+                            <a href="{% url 'mood_tracker:insight_detail' insight.id %}" class="text-xs text-indigo-600 hover:text-indigo-800 mt-2 inline-block">
+                                Read more →
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Generate New Insights Button -->
+                <div class="text-center">
+                    <form method="post" action="{% url 'mood_tracker:generate_insights' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                            Generate New Insights
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <!-- No Insights Available -->
+                <div class="text-center py-8">
+                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 mb-4">
+                        <svg class="h-8 w-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">No insights yet</h4>
+                    <p class="text-gray-600 mb-4">Generate AI-powered insights from your mood and habit data.</p>
+                    <form method="post" action="{% url 'mood_tracker:generate_insights' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                            Generate Your First Insights
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="{% url 'mood_tracker:mood_log' %}" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m-10 5.5a7.5 7.5 0 1115 0H3z"/>
+                </svg>
+                Log Today's Mood
+            </a>
+            <a href="{% url 'mood_tracker:habit_list' %}" class="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Manage Habits
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

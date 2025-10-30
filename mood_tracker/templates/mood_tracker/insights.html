@@ -1,0 +1,310 @@
+{% extends 'layouts/blank.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">AI Insights</h1>
+                    <p class="text-base sm:text-lg text-gray-600">Personalized insights from your mood and habit data</p>
+                </div>
+                <a href="{% url 'mood_tracker:dashboard' %}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-all self-start sm:self-auto">
+                    ← Dashboard
+                </a>
+            </div>
+        </div>
+
+        {% if insights %}
+            <!-- Insights List -->
+            <div class="space-y-6">
+                {% for insight in insights %}
+                    <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                        <!-- Insight Header -->
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                                    {% if insight.insight_type == 'weekly' %}
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                        </svg>
+                                    {% elif insight.insight_type == 'correlation' %}
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        </svg>
+                                    {% elif insight.insight_type == 'recommendation' %}
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">{{ insight.get_insight_type_display }}</h3>
+                                    <p class="text-sm text-gray-600">
+                                        {{ insight.data_period_start|date:"M j" }} - {{ insight.data_period_end|date:"M j, Y" }}
+                                        ({{ insight.data_period_days }} days)
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ insight.generated_at|date:"M j, Y g:i A" }}
+                            </div>
+                        </div>
+
+                        <!-- Insight Content -->
+                        <div class="prose prose-sm max-w-none">
+                            <p class="text-gray-700 leading-relaxed">{{ insight.content|linebreaks }}</p>
+                        </div>
+
+                        <!-- Insight Actions -->
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500">
+                                    Based on {{ insight.data_period_days }} days of data
+                                </span>
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'mood_tracker:insight_detail' insight.id %}" class="text-xs text-indigo-600 hover:text-indigo-800 transition-colors">
+                                        View Details
+                                    </a>
+                                    <form method="post" action="{% url 'mood_tracker:archive_insight' insight.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-xs text-gray-400 hover:text-gray-600 transition-colors" onclick="return confirm('Archive this insight?')">
+                                            Archive
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Generate New Insights -->
+            <div class="mt-8">
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Generate New Insights</h3>
+                    <p class="text-gray-600 mb-6">Get fresh AI-powered insights based on your latest mood and habit data.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Weekly Insights -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Weekly Analysis</h4>
+                            <p class="text-sm text-gray-600 mb-4">Analyze your mood and habit patterns from the last 7 days.</p>
+                            <form method="post" action="{% url 'mood_tracker:generate_insights' %}">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        {% if not django_available %}disabled{% endif %}
+                                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed insight-btn"
+                                        data-loading-text="Generating insights...">
+                                    <svg class="w-4 h-4 mr-2 btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                    <span class="btn-text">Generate Weekly Insights</span>
+                                    <svg class="w-4 h-4 mr-2 animate-spin btn-loading hidden" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Correlation Insights -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-medium text-gray-900 mb-2">Mood-Habit Correlations</h4>
+                            <p class="text-sm text-gray-600 mb-4">Discover how your habits affect your mood over time.</p>
+                            <form method="post" action="{% url 'mood_tracker:generate_correlation_insights' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="days" class="block text-xs font-medium text-gray-700 mb-1">Analysis Period</label>
+                                    <select name="days" id="days" class="w-full px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                                        <option value="14">Last 14 days</option>
+                                        <option value="30" selected>Last 30 days</option>
+                                        <option value="60">Last 60 days</option>
+                                        <option value="90">Last 90 days</option>
+                                    </select>
+                                </div>
+                                <button type="submit" 
+                                        {% if not django_available %}disabled{% endif %}
+                                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed insight-btn"
+                                        data-loading-text="Analyzing correlations...">
+                                    <svg class="w-4 h-4 mr-2 btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    <span class="btn-text">Analyze Correlations</span>
+                                    <svg class="w-4 h-4 mr-2 animate-spin btn-loading hidden" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Status Indicator -->
+                    {% if django_available %}
+                        {% if ai_available %}
+                            <div class="mt-4 p-3 bg-green-50 rounded-lg">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-green-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm text-green-800 font-medium">AI Analysis Available</p>
+                                        <p class="text-xs text-green-700 mt-1">Local AI models are running and ready to generate enhanced insights. Your data never leaves your device.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                                <div class="flex items-start">
+                                    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                    </svg>
+                                    <div>
+                                        <p class="text-sm text-yellow-800 font-medium">Statistical Analysis Mode</p>
+                                        <p class="text-xs text-yellow-700 mt-1">AI models are unavailable. Insights will be generated using statistical analysis methods.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="mt-4 p-3 bg-red-50 rounded-lg">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-red-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <div>
+                                    <p class="text-sm text-red-800 font-medium">Analysis Unavailable</p>
+                                    <p class="text-xs text-red-700 mt-1">Database connection issues detected. Please try again later or contact support.</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-gray-100 mb-6">
+                    <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No insights available yet</h3>
+                <p class="text-gray-600 mb-6">Start tracking your mood and habits to generate personalized AI insights.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="{% url 'mood_tracker:mood_log' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h8m-10 5.5a7.5 7.5 0 1115 0H3z"/>
+                        </svg>
+                        Log Your Mood
+                    </a>
+                    <a href="{% url 'mood_tracker:habit_create' %}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Create a Habit
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Handle insight generation button loading states
+        const insightButtons = document.querySelectorAll('.insight-btn');
+        
+        insightButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                if (this.disabled) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Show loading state
+                const btnIcon = this.querySelector('.btn-icon');
+                const btnText = this.querySelector('.btn-text');
+                const btnLoading = this.querySelector('.btn-loading');
+                const loadingText = this.getAttribute('data-loading-text') || 'Processing...';
+                
+                this.disabled = true;
+                
+                if (btnIcon) btnIcon.classList.add('hidden');
+                if (btnText) btnText.textContent = loadingText;
+                if (btnLoading) btnLoading.classList.remove('hidden');
+                
+                // Submit the form
+                this.form.submit();
+            });
+        });
+
+        // Handle form validation for correlation insights
+        const correlationForm = document.querySelector('form[action*="correlation"]');
+        if (correlationForm) {
+            const daysSelect = correlationForm.querySelector('select[name="days"]');
+            
+            if (daysSelect) {
+                daysSelect.addEventListener('change', function() {
+                    const days = parseInt(this.value);
+                    const submitBtn = correlationForm.querySelector('.insight-btn');
+                    
+                    if (days < 7 || days > 365) {
+                        submitBtn.disabled = true;
+                        showValidationError(this, 'Please select a valid time period (7-365 days).');
+                    } else {
+                        submitBtn.disabled = false;
+                        clearValidationError(this);
+                    }
+                });
+            }
+        }
+
+        function showValidationError(field, message) {
+            clearValidationError(field);
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'mt-1 text-xs text-red-600 validation-error';
+            errorDiv.textContent = message;
+            field.parentNode.appendChild(errorDiv);
+            
+            field.classList.add('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+        }
+
+        function clearValidationError(field) {
+            const errorEl = field.parentNode.querySelector('.validation-error');
+            if (errorEl) {
+                errorEl.remove();
+            }
+            
+            field.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+        }
+
+        // Auto-refresh insights if there's an error message indicating a temporary issue
+        const errorMessages = document.querySelectorAll('.text-red-600, .text-red-700, .text-red-800');
+        errorMessages.forEach(function(errorEl) {
+            const text = errorEl.textContent.toLowerCase();
+            if (text.includes('try again') || text.includes('temporary') || text.includes('system load')) {
+                // Show a retry button after 5 seconds
+                setTimeout(function() {
+                    const retryBtn = document.createElement('button');
+                    retryBtn.className = 'ml-2 text-xs text-indigo-600 hover:text-indigo-800 underline';
+                    retryBtn.textContent = 'Retry now';
+                    retryBtn.onclick = function() { location.reload(); };
+                    errorEl.appendChild(retryBtn);
+                }, 5000);
+            }
+        });
+    });
+</script>
+
+{% endblock %}

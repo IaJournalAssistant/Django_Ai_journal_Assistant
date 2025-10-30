@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'a_users',
     'journal',
     'media_manager',
+    'mood_tracker',
     'django_browser_reload',
 ]
 
@@ -113,11 +114,23 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'DjangoProject',     # 👈 name of the DB you created in pgAdmin
+        'NAME': 'DjangoProjectIaJournal',       # 👈 name of the DB you created in pgAdmin
         'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'okba',          # 👈 your pgAdmin password
+        'PASSWORD': '123456',  # 👈 your pgAdmin password
         'HOST': 'localhost',         # 👈 or your server IP if remote
         'PORT': '5432',              # 👈 default PostgreSQL port
+    }
+}
+
+# Cache configuration for AI insights
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
     }
 }
 
