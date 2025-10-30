@@ -143,6 +143,7 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', 'okba'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+
     }
 }
 
@@ -209,6 +210,7 @@ ACCOUNT_LOGOUT_ON_GET = False  # Require POST for logout (security)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
+
 
 # Custom account adapter (not using custom signup form anymore)
 # ACCOUNT_ADAPTER = 'a_users.adapter.CustomAccountAdapter'

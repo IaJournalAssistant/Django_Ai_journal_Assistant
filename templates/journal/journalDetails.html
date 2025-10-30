@@ -441,6 +441,45 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.body.appendChild(modal);
     };
+    
+    // Speech-to-text functions
+    document.addEventListener('click', async function(e) {
+        if (e.target.classList.contains('transcribe-btn')) {
+            const button = e.target;
+            const mediaId = button.getAttribute('data-media-id');
+            const originalText = button.textContent;
+            
+            // Update button state
+            button.textContent = '⏳ Processing...';
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(`/media/transcribe/${mediaId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Reload page to show transcription
+                    location.reload();
+                } else {
+                    alert('Transcription failed: ' + (result.error || 'Unknown error'));
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            } catch (error) {
+                console.error('Transcription error:', error);
+                alert('Transcription failed. Please try again.');
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+    });
 });
 </script>
 

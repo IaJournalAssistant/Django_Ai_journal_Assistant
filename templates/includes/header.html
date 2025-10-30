@@ -25,6 +25,9 @@
                 </a>
             </li>
             <li><a href="/">Home</a></li>
+            <li><a href="{% url 'note-list' %}">Notes</a></li>
+            <li><a href="{% url 'tag-list' %}">Tags</a></li>
+
             <li><a href="{% url 'planning:dashboard' %}">Planning</a></li>
             <li x-data="{ dropdownOpen: false }" class="relative">
                 <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">

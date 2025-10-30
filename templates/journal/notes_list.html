@@ -1,0 +1,64 @@
+{% extends 'layouts/blank.html' %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-10">
+  <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-3xl font-bold">My Notes</h1>
+      <p class="text-sm text-gray-500 mt-1">Quickly browse and manage your personal notes.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <form method="get" class="hidden md:block">
+        <input name="q" value="{{ q }}" placeholder="Search notes..." class="px-4 py-2 rounded-lg bg-gray-100 border border-gray-200" />
+      </form>
+      <a href="{% url 'note-create' %}" class="button flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+        New Note
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for note in notes %}
+      <article class="card">
+        <div class="flex items-start justify-between">
+          <div>
+            <a class="text-xl font-semibold text-indigo-600 hover:underline" href="{% url 'note-detail' note.pk %}">{{ note.title }}</a>
+            <div class="text-sm text-gray-500 mt-1">{{ note.updated_at|date:"Y-m-d H:i" }}</div>
+          </div>
+        </div>
+        <p class="mt-3 text-gray-700">{{ note.content|truncatechars:220 }}</p>
+        <div class="mt-4 flex items-center justify-between">
+          <div>
+            {% if note.tags %}
+              <span class="tag-pill">{{ note.tags.name }}</span>
+            {% elif note.predicted_tag %}
+              <span class="tag-pill" title="Suggested tag">Suggested: {{ note.predicted_tag.name }}</span>
+            {% else %}
+              <span class="text-sm text-gray-400">No tags</span>
+            {% endif %}
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="{% url 'note-detail' note.pk %}" class="button button-gray">Edit</a>
+            <form action="{% url 'note-detail' note.pk %}" method="post" onsubmit="return confirm('Delete this note?');">
+              {% csrf_token %}
+              <input type="hidden" name="delete_note" value="1" />
+              <button type="submit" class="button alert">Delete</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    {% empty %}
+      <div class="p-8 bg-white rounded-lg shadow text-gray-600 text-center">
+        {% if q %}
+          <p class="mb-4">No results found for "{{ q }}".</p>
+          <a href="{% url 'note-list' %}" class="button button-gray">Clear search</a>
+        {% else %}
+          <p class="mb-4">You don't have any notes yet.</p>
+          <a href="{% url 'note-create' %}" class="button">Create your first note</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
