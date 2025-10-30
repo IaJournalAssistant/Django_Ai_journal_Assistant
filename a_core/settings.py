@@ -33,7 +33,8 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
-CSRF_TRUSTED_ORIGINS = [ 'https://*' ]
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
+
 
 # Cache configuration for AI responses
 # Using file-based cache for development (works across processes)
@@ -66,6 +67,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.mfa',  
     'rest_framework',
+    'debug_toolbar',
     'rest_framework.authtoken',
     
     
@@ -82,6 +84,8 @@ INSTALLED_APPS = [
     # Third party
     'mood_tracker',
     'django_browser_reload',
+     'chatbotmedia',
+     'chatbot',
     'django_filters',
 
 ]
@@ -98,6 +102,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 if DEBUG:
     MIDDLEWARE += ['django_browser_reload.middleware.BrowserReloadMiddleware']
@@ -236,6 +241,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ]
+    
 }
 
 # WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED

@@ -1,6 +1,6 @@
+# a_users/views.py - VERSION CORRIGÉE SANS send_email_confirmation
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from allauth.account.utils import send_email_confirmation
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib.auth.models import User
@@ -73,11 +73,8 @@ def profile_emailchange(request):
             
             form.save() 
             
-            # Then Signal updates emailaddress and set verified to False
-            
-            # Then send confirmation email 
-            # send_email_confirmation() will be deprecated soon!
-            send_email_confirmation(request, request.user)
+            # Message temporaire - fonctionnalité désactivée
+            messages.success(request, 'Email updated successfully. Email verification temporarily disabled.')
             
             return redirect('profile-settings')
         else:
@@ -109,7 +106,8 @@ def profile_usernamechange(request):
 
 @login_required
 def profile_emailverify(request):
-    send_email_confirmation(request, request.user)
+    # Fonctionnalité temporairement désactivée
+    messages.info(request, 'Email verification is temporarily disabled.')
     return redirect('profile-settings')
 
 
