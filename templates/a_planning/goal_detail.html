@@ -1,0 +1,280 @@
+{% extends 'a_planning/base_planning.html' %}
+{% load static %}
+
+{% block planning_content %}
+<div x-data="{ activeTab: 'goals' }">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'planning:goal-list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-900">{{ goal.title }}</h1>
+                <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                    <span>Created {{ goal.created_at|date:"M j, Y" }}</span>
+                    <span class="{% if goal.is_overdue %}text-red-600 font-medium{% endif %}">
+                        Target: {{ goal.target_date|date:"M j, Y" }}
+                    </span>
+                    {% if goal.days_until_target is not None %}
+                        {% if goal.days_until_target > 0 %}
+                            <span class="text-green-600">{{ goal.days_until_target }} days remaining</span>
+                        {% elif goal.days_until_target == 0 %}
+                            <span class="text-yellow-600 font-medium">Due today</span>
+                        {% else %}
+                            <span class="text-red-600 font-medium">Overdue by {{ goal.days_until_target|add:"-1" }} days</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Goal Status -->
+            <div class="flex items-center gap-2">
+                <span class="px-4 py-2 rounded-full text-sm font-medium {% if goal.status == 'active' %}bg-blue-100 text-blue-700{% elif goal.status == 'achieved' %}bg-green-100 text-green-700{% elif goal.status == 'paused' %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                    {{ goal.get_status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Goal Description -->
+            {% if goal.description %}
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Goal Description</h2>
+                <div class="prose prose-sm max-w-none text-gray-700">
+                    {{ goal.description|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Success Criteria -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Success Criteria</h2>
+                <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-lg p-4 border border-pink-100">
+                    <div class="prose prose-sm max-w-none text-gray-700">
+                        {{ goal.success_criteria|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Tracking -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Progress Tracking</h2>
+                
+                <!-- Progress Bar -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700">Current Progress</span>
+                        <span class="text-lg font-bold text-pink-600">{{ goal.progress_percentage }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div class="bg-gradient-to-r from-pink-500 to-rose-500 h-4 rounded-full transition-all" style="width: {{ goal.progress_percentage }}%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-sm px-3 py-1 rounded-full font-medium {% if goal.progress_percentage >= 75 %}bg-green-100 text-green-700{% elif goal.progress_percentage >= 50 %}bg-blue-100 text-blue-700{% elif goal.progress_percentage >= 25 %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {{ goal.get_progress_status }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Update Progress Form -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-medium text-gray-900 mb-3">Update Progress</h3>
+                    <form method="post" action="#" class="flex items-center gap-3">
+                        {% csrf_token %}
+                        <input type="range" name="percentage" min="0" max="100" value="{{ goal.progress_percentage }}" 
+                               class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <input type="number" name="percentage" min="0" max="100" value="{{ goal.progress_percentage }}" 
+                               class="w-16 rounded border-gray-300 text-center">
+                        <span class="text-sm text-gray-600">%</span>
+                        <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm transition-all">
+                            Update
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Goal Overview -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Goal Overview</h3>
+                
+                <!-- Progress Circle -->
+                <div class="text-center mb-6">
+                    <div class="relative inline-flex items-center justify-center w-24 h-24">
+                        <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+                            <circle cx="50" cy="50" r="40" stroke="#ec4899" stroke-width="8" fill="none" 
+                                    stroke-dasharray="{{ goal.progress_percentage|floatformat:0 }} 100" 
+                                    stroke-linecap="round" class="transition-all duration-300"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-xl font-bold text-gray-900">{{ goal.progress_percentage }}%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Key Metrics -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Status:</span>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium {% if goal.status == 'active' %}bg-blue-100 text-blue-700{% elif goal.status == 'achieved' %}bg-green-100 text-green-700{% elif goal.status == 'paused' %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                            {{ goal.get_status_display }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Target Date:</span>
+                        <span class="text-sm font-medium {% if goal.is_overdue %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ goal.target_date|date:"M j, Y" }}
+                        </span>
+                    </div>
+                    
+                    {% if goal.achieved_at %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Achieved:</span>
+                        <span class="text-sm font-medium text-green-600">
+                            {{ goal.achieved_at|date:"M j, Y" }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                
+                <div class="space-y-3">
+                    <button onclick="generateGoalActionPlan({{ goal.id }})" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded-lg transition-all">
+                        🤖 AI Action Plan
+                    </button>
+                    
+                    {% if goal.status != 'achieved' and goal.progress_percentage < 100 %}
+                    <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all">
+                        Mark as Achieved
+                    </button>
+                    {% endif %}
+                    
+                    {% if goal.status == 'active' %}
+                    <button class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg transition-all">
+                        Pause Goal
+                    </button>
+                    {% elif goal.status == 'paused' %}
+                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all">
+                        Resume Goal
+                    </button>
+                    {% endif %}
+                    
+                    <button class="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-lg transition-all">
+                        Edit Goal
+                    </button>
+                    
+                    <button class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-all">
+                        Delete Goal
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Results Modal -->
+<div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">AI Action Plan</h3>
+                    <button onclick="closeAIModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="ai-modal-content" class="text-gray-700"></div>
+                
+                <!-- Loading Indicator -->
+                <div id="ai-modal-loading" class="hidden text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p class="text-gray-600">AI is creating your action plan...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateGoalActionPlan(goalId) {
+    document.getElementById('ai-modal').classList.remove('hidden');
+    document.getElementById('ai-modal-loading').classList.remove('hidden');
+    document.getElementById('ai-modal-content').innerHTML = '';
+    
+    fetch(`/planning/ai/goal-action-plan/${goalId}/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('ai-modal-loading').classList.add('hidden');
+        if (data.success) {
+            document.getElementById('ai-modal-content').innerHTML = `
+                <div class="bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg p-4 mb-4">
+                    <h4 class="font-bold text-pink-800 mb-2">🎯 AI Action Plan for "${data.goal_title}"</h4>
+                </div>
+                <div class="prose prose-sm max-w-none">
+                    <p class="leading-relaxed whitespace-pre-line">${data.action_plan}</p>
+                </div>
+            `;
+        } else {
+            document.getElementById('ai-modal-content').innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 class="font-bold text-red-800 mb-2">❌ AI Action Plan Failed</h4>
+                    <p class="text-red-700">${data.error || 'Failed to generate action plan'}</p>
+                    <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: http://192.168.1.42:5678</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('ai-modal-loading').classList.add('hidden');
+        document.getElementById('ai-modal-content').innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 class="font-bold text-red-800 mb-2">❌ Network Error</h4>
+                <p class="text-red-700">${error.message}</p>
+                <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: http://192.168.1.42:5678</p>
+            </div>
+        `;
+    });
+}
+
+function closeAIModal() {
+    document.getElementById('ai-modal').classList.add('hidden');
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
