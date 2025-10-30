@@ -46,6 +46,13 @@ urlpatterns = [
     path('htmx/projects/<int:project_id>/update-progress/', views.project_update_progress, name='project-update-progress'),
     path('htmx/goals/<int:goal_id>/update-progress/', views.goal_update_progress, name='goal-update-progress'),
     
+    # AI-powered endpoints using n8n integration
+    path('ai/task-summary/', views.ai_task_summary_view, name='ai-task-summary'),
+    path('ai/project-analysis/<int:project_id>/', views.ai_project_analysis_view, name='ai-project-analysis'),
+    path('ai/task-breakdown/', views.ai_task_breakdown_view, name='ai-task-breakdown'),
+    path('ai/goal-action-plan/<int:goal_id>/', views.ai_goal_action_plan_view, name='ai-goal-action-plan'),
+    path('ai/productivity-insights/', views.ai_productivity_insights_view, name='ai-productivity-insights'),
+    
     # API endpoints
     path('api/', include(router.urls)),
 ]

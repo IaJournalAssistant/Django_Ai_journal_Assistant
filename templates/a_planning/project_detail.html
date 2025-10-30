@@ -285,7 +285,7 @@
                     <h4 class="font-bold text-orange-800 mb-2">🔍 AI Analysis for "${data.project_title}"</h4>
                 </div>
                 <div class="prose prose-sm max-w-none">
-                    <p class="leading-relaxed whitespace-pre-line">${data.analysis}</p>
+                    ${formatAIResponse(data.analysis)}
                 </div>
             `;
                 } else {
@@ -293,7 +293,7 @@
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h4 class="font-bold text-red-800 mb-2">❌ AI Analysis Failed</h4>
                     <p class="text-red-700">${data.error || 'Failed to generate project analysis'}</p>
-                    <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: http://192.168.1.42:5678</p>
+                    <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: https://aymen2025aymen25.app.n8n.cloud</p>
                 </div>
             `;
                 }
@@ -304,7 +304,7 @@
             <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                 <h4 class="font-bold text-red-800 mb-2">❌ Network Error</h4>
                 <p class="text-red-700">${error.message}</p>
-                <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: http://192.168.1.42:5678</p>
+                <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: https://aymen2025aymen25.app.n8n.cloud</p>
             </div>
         `;
             });

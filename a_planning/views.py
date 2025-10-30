@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from .models import Task, Project, Goal, TaskComment, AIInsight
+from .services import ai_service
 
 
 @login_required
@@ -515,3 +516,235 @@ def goal_update_progress(request, goal_id):
             pass
     
     return JsonResponse({'error': 'Invalid percentage'}, status=400)
+
+
+# AI-Powered Views using n8n integration
+@login_required
+def ai_task_summary_view(request):
+    """
+    Generate AI summary of user's tasks using n8n webhook
+    """
+    tasks = Task.objects.filter(user=request.user).values(
+        'title', 'description', 'status', 'priority', 'due_date', 'project__title'
+    )
+    
+    # Convert QuerySet to list for JSON serialization
+    task_list = []
+    for task in tasks:
+        task_data = {
+            'title': task['title'],
+            'description': task['description'] or '',
+            'status': task['status'],
+            'priority': task['priority'],
+            'due_date': task['due_date'].isoformat() if task['due_date'] else None,
+            'project_title': task['project__title']
+        }
+        task_list.append(task_data)
+    
+    # Get AI summary from n8n
+    summary = ai_service.summarize_tasks(task_list)
+    
+    if summary:
+        # Create an AI insight record (skip for now to avoid model issues)
+        # AIInsight.objects.create(
+        #     user=request.user,
+        #     content=summary,
+        #     insight_type='productivity_tip'
+        # )
+        
+        return JsonResponse({
+            'success': True,
+            'summary': summary,
+            'task_count': len(task_list)
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate AI summary. Please check your n8n workflow.'
+        })
+
+
+@login_required
+def ai_project_analysis_view(request, project_id):
+    """
+    Generate AI analysis of project progress using n8n webhook
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    tasks = project.tasks.all().values(
+        'title', 'status', 'priority', 'due_date'
+    )
+    
+    # Prepare project data
+    project_data = {
+        'title': project.title,
+        'description': project.description,
+        'progress_percentage': project.progress_percentage,
+        'status': project.status,
+        'target_completion_date': project.target_completion_date.isoformat() if project.target_completion_date else None
+    }
+    
+    # Convert tasks to list
+    task_list = []
+    for task in tasks:
+        task_data = {
+            'title': task['title'],
+            'status': task['status'],
+            'priority': task['priority'],
+            'due_date': task['due_date'].isoformat() if task['due_date'] else None
+        }
+        task_list.append(task_data)
+    
+    # Get AI analysis from n8n
+    analysis = ai_service.analyze_project_progress(project_data, task_list)
+    
+    if analysis:
+        # Create an AI insight record (skip for now to avoid model issues)
+        # AIInsight.objects.create(
+        #     user=request.user,
+        #     content=analysis,
+        #     insight_type='project_planning'
+        # )
+        
+        return JsonResponse({
+            'success': True,
+            'analysis': analysis,
+            'project_title': project.title
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate AI analysis. Please check your n8n workflow.'
+        })
+
+
+@login_required
+def ai_task_breakdown_view(request):
+    """
+    Get AI suggestions for breaking down a complex task
+    """
+    if request.method == 'POST':
+        task_title = request.POST.get('title', '')
+        task_description = request.POST.get('description', '')
+        
+        if not task_title:
+            return JsonResponse({
+                'success': False,
+                'error': 'Task title is required'
+            })
+        
+        # Get AI suggestions from n8n
+        suggestions = ai_service.suggest_task_breakdown(task_title, task_description)
+        
+        if suggestions:
+            return JsonResponse({
+                'success': True,
+                'suggestions': suggestions,
+                'original_title': task_title
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to generate task breakdown. Please check your n8n workflow.'
+            })
+    
+    return JsonResponse({'success': False, 'error': 'POST method required'})
+
+
+@login_required
+def ai_goal_action_plan_view(request, goal_id):
+    """
+    Generate AI action plan for achieving a goal
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    # Prepare goal data
+    goal_data = {
+        'title': goal.title,
+        'description': goal.description,
+        'success_criteria': goal.success_criteria,
+        'target_date': goal.target_date.isoformat() if goal.target_date else None,
+        'progress_percentage': goal.progress_percentage
+    }
+    
+    # Get AI action plan from n8n
+    action_plan = ai_service.generate_goal_action_plan(goal_data)
+    
+    if action_plan:
+        # Create an AI insight record (skip for now to avoid model issues)
+        # AIInsight.objects.create(
+        #     user=request.user,
+        #     content=action_plan,
+        #     insight_type='goal_analysis'
+        # )
+        
+        return JsonResponse({
+            'success': True,
+            'action_plan': action_plan,
+            'goal_title': goal.title
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate action plan. Please check your n8n workflow.'
+        })
+
+
+@login_required
+def ai_productivity_insights_view(request):
+    """
+    Generate AI insights about user's productivity patterns
+    """
+    # Gather user productivity data
+    total_tasks = Task.objects.filter(user=request.user).count()
+    completed_tasks = Task.objects.filter(user=request.user, status='completed').count()
+    overdue_tasks = Task.objects.filter(
+        user=request.user, 
+        due_date__lt=timezone.now(),
+        status__in=['pending', 'in_progress']
+    ).count()
+    
+    active_projects = Project.objects.filter(user=request.user, status='active').count()
+    completed_projects = Project.objects.filter(user=request.user, status='completed').count()
+    
+    active_goals = Goal.objects.filter(user=request.user, status='active').count()
+    achieved_goals = Goal.objects.filter(user=request.user, status='achieved').count()
+    
+    # Calculate completion rates
+    task_completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
+    project_completion_rate = (completed_projects / (active_projects + completed_projects) * 100) if (active_projects + completed_projects) > 0 else 0
+    goal_achievement_rate = (achieved_goals / (active_goals + achieved_goals) * 100) if (active_goals + achieved_goals) > 0 else 0
+    
+    user_data = {
+        'total_tasks': total_tasks,
+        'completed_tasks': completed_tasks,
+        'overdue_tasks': overdue_tasks,
+        'task_completion_rate': round(task_completion_rate, 1),
+        'active_projects': active_projects,
+        'completed_projects': completed_projects,
+        'project_completion_rate': round(project_completion_rate, 1),
+        'active_goals': active_goals,
+        'achieved_goals': achieved_goals,
+        'goal_achievement_rate': round(goal_achievement_rate, 1)
+    }
+    
+    # Get AI insights from n8n
+    insights = ai_service.analyze_productivity_patterns(user_data)
+    
+    if insights:
+        # Create an AI insight record (skip for now to avoid model issues)
+        # AIInsight.objects.create(
+        #     user=request.user,
+        #     content=insights,
+        #     insight_type='productivity_tip'
+        # )
+        
+        return JsonResponse({
+            'success': True,
+            'insights': insights,
+            'productivity_data': user_data
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to generate productivity insights. Please check your n8n workflow.'
+        })

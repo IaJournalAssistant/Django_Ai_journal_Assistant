@@ -204,6 +204,13 @@ class Goal(models.Model):
             return delta.days
         return None
     
+    def days_overdue(self):
+        """Calculate how many days overdue (positive number)"""
+        days = self.days_until_target()
+        if days is not None and days < 0:
+            return abs(days)
+        return 0
+    
     def get_progress_status(self):
         """Get human-readable progress status"""
         if self.status == 'achieved':
