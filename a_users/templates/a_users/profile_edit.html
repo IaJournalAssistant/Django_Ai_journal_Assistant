@@ -18,6 +18,21 @@
 <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
+    
+    <!-- AI Bio Generation Button -->
+    <div class="my-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
+        <div class="flex items-center justify-between">
+            <div class="flex-1">
+                <h3 class="font-bold text-gray-900 mb-1">✨ AI Bio Generator</h3>
+                <p class="text-sm text-gray-600">Fill in your profession, location, or interests above, then click to generate a professional bio automatically.</p>
+            </div>
+            <button type="button" id="generateBioBtn" class="ml-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-lg shadow-md transition-all whitespace-nowrap">
+                Generate Bio
+            </button>
+        </div>
+        <div id="bioMessage" class="mt-3 hidden"></div>
+    </div>
+    
     <button type="submit" >Submit</button>
     {% if onboarding %}
     <a class="button button-gray ml-1" href="{% url 'home' %}">Skip</a>
@@ -50,6 +65,65 @@
 
     display_nameInput.addEventListener('input', (event) => {
         display_nameOutput.innerText = event.target.value;
+    });
+
+    // AI Bio Generation
+    const generateBioBtn = document.getElementById('generateBioBtn');
+    const bioMessage = document.getElementById('bioMessage');
+    const bioTextarea = document.getElementById('id_info');
+    
+    generateBioBtn.addEventListener('click', async () => {
+        // Update profile data from form fields
+        const profileData = {
+            first_name: document.getElementById('id_first_name').value,
+            last_name: document.getElementById('id_last_name').value,
+            profession: document.getElementById('id_profession').value,
+            location: document.getElementById('id_location').value,
+            interests: document.getElementById('id_interests').value,
+        };
+        
+        // Save current form data first
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        for (const [key, value] of Object.entries(profileData)) {
+            if (value) {
+                formData.append(key, value);
+            }
+        }
+        
+        // Disable button and show loading
+        generateBioBtn.disabled = true;
+        generateBioBtn.textContent = 'Generating...';
+        bioMessage.className = 'mt-3 p-3 bg-blue-100 text-blue-800 rounded-lg';
+        bioMessage.textContent = '🤖 AI is generating your bio...';
+        bioMessage.classList.remove('hidden');
+        
+        try {
+            const response = await fetch('{% url "profile-generate-bio" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                bioTextarea.value = data.bio;
+                bioMessage.className = 'mt-3 p-3 bg-green-100 text-green-800 rounded-lg';
+                bioMessage.textContent = '✓ ' + data.message;
+            } else {
+                bioMessage.className = 'mt-3 p-3 bg-red-100 text-red-800 rounded-lg';
+                bioMessage.textContent = '✗ ' + data.message;
+            }
+        } catch (error) {
+            bioMessage.className = 'mt-3 p-3 bg-red-100 text-red-800 rounded-lg';
+            bioMessage.textContent = '✗ Error: ' + error.message;
+        } finally {
+            generateBioBtn.disabled = false;
+            generateBioBtn.textContent = 'Generate Bio';
+        }
     });
 
 </script>
