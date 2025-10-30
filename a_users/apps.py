@@ -10,6 +10,7 @@ class AUsersConfig(AppConfig):
         
         # Monkey-patch allauth MFA to bypass email verification for development
         # WARNING: Remove this in production!
+            # TEMPORARILY DISABLED DUE TO CRYPTOGRAPHY ISSUES
         from allauth.mfa.internal.flows import add as mfa_add_module
         
         def bypass_email_verification(user):

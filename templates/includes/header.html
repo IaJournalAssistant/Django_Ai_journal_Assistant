@@ -25,6 +25,7 @@
                 </a>
             </li>
             <li><a href="/">Home</a></li>
+            <li><a href="{% url 'planning:dashboard' %}">Planning</a></li>
             <li x-data="{ dropdownOpen: false }" class="relative">
                 <a @click="dropdownOpen = !dropdownOpen" @click.away="dropdownOpen = false" class="cursor-pointer select-none">
                     <img class="h-8 w-8 rounded-full object-cover" src="{{ request.user.profile.avatar }}" alt="Avatar" />
@@ -76,6 +77,54 @@
                             <div class="flex-1">
                                 <p class="text-sm font-semibold text-gray-700 group-hover:text-purple-600 transition-colors">My Journals</p>
                                 <p class="text-xs text-gray-500">All your entries</p>
+                            </div>
+                        </a>
+
+                        <a href="{% url 'note-list' %}" class="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all group">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center group-hover:from-amber-200 group-hover:to-orange-200 transition-all">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-700 group-hover:text-amber-600 transition-colors">My Notes</p>
+                                <p class="text-xs text-gray-500">Quick notes & ideas</p>
+                            </div>
+                        </a>
+
+                        <a href="{% url 'tag-list' %}" class="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all group">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-100 to-teal-100 flex items-center justify-center group-hover:from-cyan-200 group-hover:to-teal-200 transition-all">
+                                <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-700 group-hover:text-cyan-600 transition-colors">Tags</p>
+                                <p class="text-xs text-gray-500">Organize by tags</p>
+                            </div>
+                        </a>
+
+                        <a href="{% url 'mood_tracker:dashboard' %}" class="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all group">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center group-hover:from-indigo-200 group-hover:to-blue-200 transition-all">
+                                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-700 group-hover:text-indigo-600 transition-colors">Mood & Habits</p>
+                                <p class="text-xs text-gray-500">Track your wellbeing</p>
+                            </div>
+                        </a>
+
+                        <a href="{% url 'planning:dashboard' %}" class="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all group">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-100 to-green-100 flex items-center justify-center group-hover:from-emerald-200 group-hover:to-green-200 transition-all">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-700 group-hover:text-emerald-600 transition-colors">Planning & Tasks</p>
+                                <p class="text-xs text-gray-500">Organize your goals</p>
                             </div>
                         </a>
                     </div>

@@ -10,10 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 
 # Project title displayed in the header
@@ -21,14 +26,27 @@ PROJECT_TITLE = "Smart Journal"
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rj#-z^kx3j+1ay397otg6j8m_8#v^$^$jys6&41vy^&6le)ezc'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-rj#-z^kx3j+1ay397otg6j8m_8#v^$^$jys6&41vy^&6le)ezc')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [ 'https://*' ]
+
+# Cache configuration for AI responses
+# Using file-based cache for development (works across processes)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'cache',
+        'TIMEOUT': 3600,  # 1 hour default
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
 
 
 # Application definition
@@ -46,7 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'allauth.mfa',
+    'allauth.mfa',  
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -56,9 +74,16 @@ INSTALLED_APPS = [
     # My apps
     'a_home',
     'a_users',
+    'a_planning',
     'journal',
     'media_manager',
+
+
+    # Third party
+    'mood_tracker',
     'django_browser_reload',
+    'django_filters',
+
 ]
 
 SITE_ID = 1
@@ -113,11 +138,24 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'DjangoProject',     # 👈 name of the DB you created in pgAdmin
-        'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'okba',          # 👈 your pgAdmin password
-        'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5432',              # 👈 default PostgreSQL port
+        'NAME': os.getenv('DB_NAME', 'django_ai_journal'),
+        'USER': os.getenv('DB_USER', 'django_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'django_pass_2024'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+
+    }
+}
+
+# Cache configuration for AI insights
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
     }
 }
 
@@ -158,9 +196,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [ BASE_DIR / 'static' ]
+STATIC_ROOT = os.getenv('STATIC_ROOT', BASE_DIR / 'staticfiles')
 
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media' 
+MEDIA_ROOT = os.getenv('MEDIA_ROOT', BASE_DIR / 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -172,8 +211,22 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 
+
+# Custom account adapter (not using custom signup form anymore)
+# ACCOUNT_ADAPTER = 'a_users.adapter.CustomAccountAdapter'
+# ACCOUNT_FORMS = {
+#     'signup': 'a_users.adapter.CustomSignupForm',
+# }
+
+# Disable passkey/security key features (requires HTTPS or localhost)
+MFA_PASSKEY_LOGIN_ENABLED = False
+MFA_PASSKEY_SIGNUP_ENABLED = False
+
 # Disable email verification requirement for MFA/passkeys
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
+
+# Ollama AI Configuration for bio generation
+OLLAMA_MODEL = 'gemma2:2b'  # Using the model from docker-compose.yml
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -185,7 +238,7 @@ REST_FRAMEWORK = {
     ]
 }
 
-# WebAuthn/Passkey Settings (Face Login)
+# WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED
 # Enables Face ID, Windows Hello, Touch ID, and security keys
 MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
 MFA_PASSKEY_LOGIN_ENABLED = True
@@ -200,3 +253,7 @@ MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
 # TODO: Remove this setting before deploying to production!
 # Production requires HTTPS - this is a security requirement of WebAuthn
 MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+
+# Ollama Configuration for AI features
+OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'gemma2:2b')

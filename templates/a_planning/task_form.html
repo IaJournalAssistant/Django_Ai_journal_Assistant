@@ -1,0 +1,237 @@
+{% extends 'a_planning/base_planning.html' %}
+{% load static %}
+
+{% block planning_content %}
+<div x-data="{ activeTab: 'tasks' }">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'planning:task-list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{% if is_edit %}Edit Task{% else %}Create New Task{% endif %}</h1>
+                <p class="text-gray-600 mt-1">{% if is_edit %}Update your task details{% else %}Add a new task to your planning system{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Form -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Title -->
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Task Title *</label>
+                <input type="text" id="title" name="title" required
+                       value="{% if task %}{{ task.title }}{% endif %}"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                       placeholder="Enter task title...">
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea id="description" name="description" rows="4"
+                          class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                          placeholder="Describe your task in detail...">{% if task %}{{ task.description }}{% endif %}</textarea>
+                
+                <!-- AI Task Breakdown Button -->
+                <div class="mt-2">
+                    <button type="button" onclick="generateTaskBreakdown()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm transition-all">
+                        🤖 AI Task Breakdown
+                    </button>
+                    <span class="text-xs text-gray-500 ml-2">Get AI suggestions for breaking down complex tasks</span>
+                </div>
+            </div>
+            
+            <!-- Priority and Project Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Priority -->
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                    <select id="priority" name="priority" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Low Priority</option>
+                        <option value="medium" {% if not task or task.priority == 'medium' %}selected{% endif %}>Medium Priority</option>
+                        <option value="high" {% if task.priority == 'high' %}selected{% endif %}>High Priority</option>
+                        <option value="urgent" {% if task.priority == 'urgent' %}selected{% endif %}>Urgent Priority</option>
+                    </select>
+                </div>
+                
+                <!-- Project -->
+                <div>
+                    <label for="project" class="block text-sm font-medium text-gray-700 mb-2">Project</label>
+                    <select id="project" name="project" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="" {% if not task or not task.project %}selected{% endif %}>No Project (Standalone Task)</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if task and task.project and task.project.id == project.id or request.GET.project == project.id|stringformat:"s" %}selected{% endif %}>{{ project.title }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if not projects %}
+                    <p class="text-sm text-gray-500 mt-1">
+                        No active projects. <a href="{% url 'planning:project-create' %}" class="text-indigo-600 hover:text-indigo-700">Create a project</a> to organize your tasks.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Due Date -->
+            <div>
+                <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                <input type="datetime-local" id="due_date" name="due_date"
+                       value="{% if task.due_date %}{{ task.due_date|date:'Y-m-d\TH:i' }}{% endif %}"
+                       class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <p class="text-sm text-gray-500 mt-1">Optional: Set a deadline for this task</p>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                <a href="{% url 'planning:task-list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium px-6 py-3 rounded-lg transition-all">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg transition-all">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        {% if is_edit %}Update Task{% else %}Create Task{% endif %}
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="mt-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+        <h3 class="text-lg font-semibold text-indigo-900 mb-3">💡 Quick Tips</h3>
+        <ul class="space-y-2 text-sm text-indigo-700">
+            <li class="flex items-start gap-2">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Use clear, actionable titles like "Review project proposal" instead of "Project stuff"
+            </li>
+            <li class="flex items-start gap-2">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Set realistic due dates to help prioritize your work
+            </li>
+            <li class="flex items-start gap-2">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Assign tasks to projects to keep related work organized
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- AI Task Breakdown Modal -->
+<div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-96 overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">AI Task Breakdown</h3>
+                    <button onclick="closeAIModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="ai-modal-content" class="text-gray-700"></div>
+                
+                <!-- Loading Indicator -->
+                <div id="ai-modal-loading" class="hidden text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p class="text-gray-600">AI is analyzing your task...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateTaskBreakdown() {
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    
+    if (!title.trim()) {
+        alert('Please enter a task title first');
+        return;
+    }
+    
+    document.getElementById('ai-modal').classList.remove('hidden');
+    document.getElementById('ai-modal-loading').classList.remove('hidden');
+    document.getElementById('ai-modal-content').innerHTML = '';
+    
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    fetch('/planning/ai/task-breakdown/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('ai-modal-loading').classList.add('hidden');
+        if (data.success) {
+            document.getElementById('ai-modal-content').innerHTML = `
+                <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-4 mb-4">
+                    <h4 class="font-bold text-orange-800 mb-2">🤖 AI Breakdown for "${data.original_title}"</h4>
+                </div>
+                <div class="prose prose-sm max-w-none">
+                    <p class="leading-relaxed whitespace-pre-line">${data.suggestions}</p>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600">💡 You can use these suggestions to create multiple smaller tasks or update your current task description.</p>
+                </div>
+            `;
+        } else {
+            document.getElementById('ai-modal-content').innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 class="font-bold text-red-800 mb-2">❌ AI Breakdown Failed</h4>
+                    <p class="text-red-700">${data.error || 'Failed to generate task breakdown'}</p>
+                    <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: https://aymen2025aymen25.app.n8n.cloud</p>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('ai-modal-loading').classList.add('hidden');
+        document.getElementById('ai-modal-content').innerHTML = `
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h4 class="font-bold text-red-800 mb-2">❌ Network Error</h4>
+                <p class="text-red-700">${error.message}</p>
+                <p class="text-red-600 text-sm mt-2">Make sure your n8n workflow is running at: https://aymen2025aymen25.app.n8n.cloud</p>
+            </div>
+        `;
+    });
+}
+
+function closeAIModal() {
+    document.getElementById('ai-modal').classList.add('hidden');
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
