@@ -1,0 +1,323 @@
+{% extends 'layouts/box.html' %}
+{% load static %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+        {% if existing_mood %}
+        Update Today's Mood
+        {% else %}
+        Log Your Mood
+        {% endif %}
+    </h1>
+    <p class="text-gray-600">
+        {% if existing_mood %}
+        You already logged your mood for {{ today|date:"F j, Y" }}. You can update it below.
+        {% else %}
+        How are you feeling today, {{ today|date:"F j, Y" }}?
+        {% endif %}
+    </p>
+</div>
+
+<form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Mood Level Selection -->
+    <div>
+        <label class="block text-sm font-semibold text-gray-900 mb-4">{{ form.mood_level.label }}</label>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
+            {% for choice in form.mood_level %}
+            <div class="relative">
+                {{ choice.tag }}
+                <label for="{{ choice.id_for_label }}"
+                    class="cursor-pointer block p-2 sm:p-4 text-center border-2 border-gray-200 rounded-xl hover:border-indigo-300 transition-all {% if choice.choice_value == form.mood_level.value %}border-indigo-500 bg-indigo-50{% endif %}">
+                    <div class="text-xl sm:text-2xl mb-1 sm:mb-2">
+                        {% if choice.choice_value == "1" %}😔
+                        {% elif choice.choice_value == "2" %}😕
+                        {% elif choice.choice_value == "3" %}😐
+                        {% elif choice.choice_value == "4" %}😊
+                        {% elif choice.choice_value == "5" %}😄
+                        {% endif %}
+                    </div>
+                    <div class="text-sm sm:text-lg font-bold text-gray-900">{{ choice.choice_value }}</div>
+                    <div class="text-xs text-gray-600 hidden sm:block">{{ choice.choice_label }}</div>
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        {% if form.mood_level.help_text %}
+        <p class="mt-2 text-sm text-gray-500">{{ form.mood_level.help_text }}</p>
+        {% endif %}
+        {% if form.mood_level.errors %}
+        <div class="mt-2">
+            {% for error in form.mood_level.errors %}
+            <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Mood Label Selection -->
+    <div>
+        <label for="{{ form.mood_label.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">{{
+            form.mood_label.label }}</label>
+        {{ form.mood_label }}
+        {% if form.mood_label.help_text %}
+        <p class="mt-2 text-sm text-gray-500">{{ form.mood_label.help_text }}</p>
+        {% endif %}
+        {% if form.mood_label.errors %}
+        <div class="mt-2">
+            {% for error in form.mood_label.errors %}
+            <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Notes -->
+    <div>
+        <label for="{{ form.notes.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">{{
+            form.notes.label }}</label>
+        {{ form.notes }}
+        {% if form.notes.help_text %}
+        <p class="mt-2 text-sm text-gray-500">{{ form.notes.help_text }}</p>
+        {% endif %}
+        {% if form.notes.errors %}
+        <div class="mt-2">
+            {% for error in form.notes.errors %}
+            <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Date -->
+    <div>
+        <label for="{{ form.date.id_for_label }}" class="block text-sm font-semibold text-gray-900 mb-2">{{
+            form.date.label }}</label>
+        {{ form.date }}
+        {% if form.date.help_text %}
+        <p class="mt-2 text-sm text-gray-500">{{ form.date.help_text }}</p>
+        {% endif %}
+        {% if form.date.errors %}
+        <div class="mt-2">
+            {% for error in form.date.errors %}
+            <p class="text-sm text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Form Errors -->
+    {% if form.non_field_errors %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        {% for error in form.non_field_errors %}
+        <p class="text-sm text-red-600">{{ error }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3 pt-6">
+        <button type="submit" id="submit-btn"
+            class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+            <span id="submit-text">
+                {% if existing_mood %}
+                Update Mood
+                {% else %}
+                Log Mood
+                {% endif %}
+            </span>
+            <span id="submit-loading" class="hidden">
+                <svg class="inline w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+            </span>
+        </button>
+        <a href="{% url 'mood_tracker:dashboard' %}"
+            class="flex-1 text-center bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-300 transition-all">
+            Cancel
+        </a>
+    </div>
+</form>
+
+<!-- Existing Mood Info -->
+{% if existing_mood %}
+<div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <h3 class="text-sm font-semibold text-blue-900 mb-2">Current Entry</h3>
+    <div class="text-sm text-blue-800">
+        <p><strong>Mood:</strong> {{ existing_mood.mood_level }}/5 - {{ existing_mood.get_mood_label_display }}</p>
+        {% if existing_mood.notes %}
+        <p><strong>Notes:</strong> {{ existing_mood.notes }}</p>
+        {% endif %}
+        <p><strong>Logged:</strong> {{ existing_mood.created_at|date:"M j, Y g:i A" }}</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
+        const submitBtn = document.getElementById('submit-btn');
+        const submitText = document.getElementById('submit-text');
+        const submitLoading = document.getElementById('submit-loading');
+        const moodInputs = document.querySelectorAll('input[name="mood_level"]');
+        const labels = document.querySelectorAll('label[for^="id_mood_level"]');
+        const dateInput = document.querySelector('input[name="date"]');
+        const notesInput = document.querySelector('textarea[name="notes"]');
+
+        // Add visual feedback for mood level selection
+        moodInputs.forEach(function (input, index) {
+            input.addEventListener('change', function () {
+                // Remove active class from all labels
+                labels.forEach(function (label) {
+                    label.classList.remove('border-indigo-500', 'bg-indigo-50');
+                    label.classList.add('border-gray-200');
+                });
+
+                // Add active class to selected label
+                if (this.checked) {
+                    const label = document.querySelector('label[for="' + this.id + '"]');
+                    label.classList.remove('border-gray-200');
+                    label.classList.add('border-indigo-500', 'bg-indigo-50');
+                }
+                
+                // Validate form
+                validateForm();
+            });
+        });
+
+        // Client-side form validation
+        function validateForm() {
+            const selectedMood = document.querySelector('input[name="mood_level"]:checked');
+            const dateValue = dateInput.value;
+            const today = new Date().toISOString().split('T')[0];
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+            
+            let isValid = true;
+            let errorMessage = '';
+
+            // Clear previous error styling
+            clearErrors();
+
+            // Validate mood selection
+            if (!selectedMood) {
+                isValid = false;
+                errorMessage = 'Please select a mood level.';
+                showFieldError('mood_level', errorMessage);
+            }
+
+            // Validate date
+            if (dateValue) {
+                if (dateValue > today) {
+                    isValid = false;
+                    errorMessage = 'Mood entries cannot be created for future dates.';
+                    showFieldError('date', errorMessage);
+                } else if (dateValue < oneYearAgoStr) {
+                    isValid = false;
+                    errorMessage = 'Mood entries cannot be created more than 1 year in the past.';
+                    showFieldError('date', errorMessage);
+                }
+            }
+
+            // Validate notes length
+            if (notesInput.value.length > 500) {
+                isValid = false;
+                errorMessage = 'Notes cannot exceed 500 characters.';
+                showFieldError('notes', errorMessage);
+            }
+
+            submitBtn.disabled = !isValid;
+            return isValid;
+        }
+
+        function showFieldError(fieldName, message) {
+            const field = document.querySelector(`[name="${fieldName}"]`);
+            if (field) {
+                // Add error styling
+                if (fieldName === 'mood_level') {
+                    // For radio buttons, highlight the container
+                    const container = field.closest('.grid');
+                    if (container) {
+                        container.classList.add('border-2', 'border-red-300', 'rounded-lg', 'p-2');
+                    }
+                } else {
+                    field.classList.add('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+                }
+
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'mt-2 text-sm text-red-600 client-error';
+                errorDiv.textContent = message;
+                
+                if (fieldName === 'mood_level') {
+                    const container = field.closest('.grid').parentNode;
+                    container.appendChild(errorDiv);
+                } else {
+                    field.parentNode.appendChild(errorDiv);
+                }
+            }
+        }
+
+        function clearErrors() {
+            // Remove error styling
+            document.querySelectorAll('.border-red-300').forEach(el => {
+                el.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            });
+            
+            // Remove error containers
+            document.querySelectorAll('.grid.border-2').forEach(el => {
+                el.classList.remove('border-2', 'border-red-300', 'rounded-lg', 'p-2');
+            });
+
+            // Remove error messages
+            document.querySelectorAll('.client-error').forEach(el => el.remove());
+        }
+
+        // Add event listeners for real-time validation
+        dateInput.addEventListener('change', validateForm);
+        notesInput.addEventListener('input', function() {
+            // Show character count
+            const charCount = this.value.length;
+            let countEl = document.getElementById('notes-char-count');
+            if (!countEl) {
+                countEl = document.createElement('div');
+                countEl.id = 'notes-char-count';
+                countEl.className = 'text-xs text-gray-500 mt-1';
+                this.parentNode.appendChild(countEl);
+            }
+            countEl.textContent = `${charCount}/500 characters`;
+            
+            if (charCount > 500) {
+                countEl.classList.add('text-red-600');
+                countEl.classList.remove('text-gray-500');
+            } else {
+                countEl.classList.add('text-gray-500');
+                countEl.classList.remove('text-red-600');
+            }
+            
+            validateForm();
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+        });
+
+        // Initial validation
+        validateForm();
+    });
+</script>
+{% endblock %}
