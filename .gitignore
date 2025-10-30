@@ -13,12 +13,12 @@ media/
 __pycache__/
 db.sqlite3
 .env
+.env.docker
 .DS_Store
 # Test files and coverage
 *.pyc
 *.pyo
 *.pyd
-__pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
@@ -28,7 +28,6 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-.pytest_cache/
 
 # Test databases
 test_*.db
@@ -47,6 +46,13 @@ migrations/__pycache__/
 .vscode/settings.json
 .vscode/launch.json
 .vscode/extensions.json
+
+# Docker
+data/
+staticfiles/
+
+# Ollama
+.ollama/
 
 # PyCharm specific
 .idea/workspace.xml
