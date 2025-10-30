@@ -1,14 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+
 from django.db.models import Q
-from rest_framework import viewsets, permissions
-from .serializers import JournalEntrySerializer
 from .models import JournalEntry, Note, Tag
 from .nlp_utils import predict_tags_for_texts
 import logging
 from .forms import JournalEntryForm, NoteForm, TagForm
+from django.utils import timezone
+from rest_framework import viewsets, permissions
+from .serializers import JournalEntrySerializer
+from .forms import UnifiedNoteForm
+
 from media_manager.models import MediaFile
+from .webhook_service import webhook_service
+import re
 
 # ✅ REST API viewset (if you ever use API routes)
 class JournalEntryViewSet(viewsets.ModelViewSet):
@@ -33,45 +39,87 @@ def journal_list(request):
 @login_required
 def journal_create(request):
     if request.method == 'POST':
-        form = JournalEntryForm(request.POST)
-        if form.is_valid():
-            journal = form.save(commit=False)
-            journal.author = request.user
-            journal.save()
-            
-            # Handle multiple file uploads
-            files = request.FILES.getlist('files')
-            for file in files:
-                if file:
-                    # Auto-detect file type
-                    file_type = detect_file_type(file.name)
-                    caption = request.POST.get(f'caption_{file.name}', '')
+        content = request.POST.get('content', '')
+        title = request.POST.get('title', '') or extract_title_from_content(content)
+        
+        # Create journal entry
+        journal = JournalEntry.objects.create(
+            author=request.user,
+            title=title,
+            content=content
+        )
+        
+        # Send to n8n webhook and get AI response
+        try:
+            ai_response = webhook_service.send_journal_created(journal)
+            if ai_response and ai_response.get('success'):
+                # Store AI response in cache immediately
+                from django.core.cache import cache
+                cache_key = f"ai_response_{journal.id}"
+                ai_data = {
+                    'response': ai_response.get('ai_summary', ''),
+                    'type': 'analysis',
+                    'timestamp': timezone.now().isoformat(),
+                    'received_at': timezone.now().isoformat()
+                }
+                cache.set(cache_key, ai_data, timeout=3600)
+        except Exception as e:
+            # Log error but don't fail the journal creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to send journal {journal.id} to webhook: {str(e)}")
+        
+        # Handle multiple file uploads
+        files = request.FILES.getlist('files')
+        for file in files:
+            if file:
+                # Auto-detect file type
+                file_type = detect_file_type(file.name)
+                caption = request.POST.get(f'caption_{file.name}', '')
+                
+                MediaFile.objects.create(
+                    uploaded_by=request.user,
+                    journal=journal,
+                    file=file,
+                    file_type=file_type,
+                    caption=caption
+                )
+        
+        # Handle voice recordings
+        voice_recordings = request.FILES.getlist('voice_recordings')
+        for i, voice_file in enumerate(voice_recordings):
+            if voice_file:
+                caption = request.POST.get(f'voice_caption_{i}', '')
+                
+                media_file = MediaFile.objects.create(
+                    uploaded_by=request.user,
+                    journal=journal,
+                    file=voice_file,
+                    file_type='audio',
+                    caption=caption or 'Voice Recording'
+                )
+                
+                # Trigger transcription manually if signals don't work
+                try:
+                    from media_manager.speech_to_text import process_audio_transcription
+                    import threading
                     
-                    MediaFile.objects.create(
-                        uploaded_by=request.user,
-                        journal=journal,
-                        file=file,
-                        file_type=file_type,
-                        caption=caption
-                    )
-            
-            # Handle voice recordings
-            voice_recordings = request.FILES.getlist('voice_recordings')
-            for i, voice_file in enumerate(voice_recordings):
-                if voice_file:
-                    caption = request.POST.get(f'voice_caption_{i}', '')
+                    # Process transcription in background thread to avoid blocking
+                    def transcribe_async():
+                        process_audio_transcription(media_file.id)
                     
-                    MediaFile.objects.create(
-                        uploaded_by=request.user,
-                        journal=journal,
-                        file=voice_file,
-                        file_type='audio',
-                        caption=caption or 'Voice Recording'
-                    )
-            
-            return redirect('journal-detail', pk=journal.id)
+                    thread = threading.Thread(target=transcribe_async)
+                    thread.daemon = True
+                    thread.start()
+                    
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to start transcription for media file {media_file.id}: {str(e)}")
+        
+        return redirect('journal-detail', pk=journal.id)
     else:
-        form = JournalEntryForm()
+        form = UnifiedNoteForm()
     
     return render(request, 'journal/create.html', {'form': form})
 
@@ -279,6 +327,179 @@ def tag_delete(request, slug):
         return redirect('tag-list')
     return render(request, 'journal/tag_confirm_delete.html', {'tag': tag})
  
+
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def receive_ai_response(request):
+    """
+    Receive AI response from n8n webhook
+    This endpoint will be called by n8n after AI processing
+    """
+    try:
+        # Parse the incoming JSON data
+        data = json.loads(request.body)
+        
+        # Extract journal ID and AI response
+        journal_id = data.get('journal_id')
+        ai_response = data.get('ai_response', '')
+        response_type = data.get('response_type', 'analysis')  # analysis, summary, etc.
+        
+        if not journal_id:
+            return JsonResponse({'error': 'journal_id is required'}, status=400)
+        
+        # Get the journal entry
+        try:
+            journal = JournalEntry.objects.get(id=journal_id)
+        except JournalEntry.DoesNotExist:
+            return JsonResponse({'error': 'Journal not found'}, status=404)
+        
+        # Store the AI response (you can extend JournalEntry model or create a separate model)
+        # For now, we'll use a simple approach with session storage
+        
+        # Log the complete request for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Log what n8n actually sent
+        logger.info(f"=== n8n Webhook Received ===")
+        logger.info(f"Raw request body: {request.body.decode()}")
+        logger.info(f"Parsed data: {data}")
+        logger.info(f"Journal ID: {journal_id}")
+        logger.info(f"AI Response length: {len(ai_response)}")
+        logger.info(f"Response type: {response_type}")
+        
+        # Store in cache
+        from django.core.cache import cache
+        cache_key = f"ai_response_{journal_id}"
+        
+        ai_data = {
+            'response': ai_response,
+            'type': response_type,
+            'timestamp': data.get('timestamp'),
+            'received_at': timezone.now().isoformat()
+        }
+        
+        logger.info(f"Storing in cache with key: {cache_key}")
+        cache.set(cache_key, ai_data, timeout=3600)
+        
+        # Verify storage
+        stored = cache.get(cache_key)
+        if stored:
+            logger.info(f"✓ Successfully stored in cache")
+        else:
+            logger.error(f"✗ Failed to store in cache")
+        
+        # Return success response to n8n
+        return JsonResponse({
+            'success': True,
+            'message': 'AI response received successfully',
+            'journal_id': journal_id
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error processing AI response: {str(e)}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+@login_required
+def get_ai_response(request, journal_id):
+    """
+    Get AI response for a specific journal entry
+    This will be called by JavaScript to check for AI responses
+    """
+    try:
+        # Check if user owns this journal
+        journal = get_object_or_404(JournalEntry, id=journal_id, author=request.user)
+        
+        # Get AI response from cache
+        from django.core.cache import cache
+        cache_key = f"ai_response_{journal_id}"
+        ai_data = cache.get(cache_key)
+        
+        if ai_data:
+            return JsonResponse({
+                'success': True,
+                'has_response': True,
+                'ai_response': ai_data['response'],
+                'response_type': ai_data['type'],
+                'timestamp': ai_data.get('timestamp'),
+                'received_at': ai_data.get('received_at')
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'has_response': False,
+                'message': 'No AI response yet'
+            })
+            
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+
+@login_required
+def delete_journal(request, pk):
+    """
+    Delete a journal entry
+    Only the author can delete their own journal entries
+    """
+    journal = get_object_or_404(JournalEntry, id=pk, author=request.user)
+    
+    if request.method == 'POST':
+        # Store journal title for success message
+        journal_title = journal.title
+        
+        # Delete the journal (this will also delete related media files due to CASCADE)
+        journal.delete()
+        
+        # Return JSON response for AJAX requests
+        if request.headers.get('Content-Type') == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Journal "{journal_title}" has been deleted successfully.',
+                'redirect_url': '/journal/'
+            })
+        
+        # For regular form submissions, redirect to journal list
+        from django.contrib import messages
+        messages.success(request, f'Journal "{journal_title}" has been deleted successfully.')
+        return redirect('journal-list')
+    
+    # For GET requests, show confirmation page
+    return render(request, 'journal/delete_confirm.html', {
+        'journal': journal
+    })
+
+def extract_title_from_content(content):
+    """Extract title from markdown-style content"""
+    if not content:
+        return 'Untitled Note'
+    
+    lines = content.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        # Check for markdown heading
+        if line.startswith('# '):
+            return line[2:].strip()
+        # Check for first non-empty line that's not markdown syntax
+        elif line and not line.startswith('#') and not line.startswith('-') and not line.startswith('*') and not line.startswith('['):
+            # Take first 50 characters as title
+            return line[:50].strip()
+    
+    return 'Untitled Note'
 
 def detect_file_type(filename):
     """Auto-detect file type based on extension"""

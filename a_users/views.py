@@ -6,7 +6,9 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import User
 from django.contrib.auth.views import redirect_to_login
 from django.contrib import messages
+from django.http import JsonResponse
 from .forms import *
+from .ai_service import generate_user_bio
 
 def profile_view(request, username=None):
     if username:
@@ -16,7 +18,16 @@ def profile_view(request, username=None):
             profile = request.user.profile
         except:
             return redirect_to_login(request.get_full_path())
-    return render(request, 'a_users/profile.html', {'profile':profile})
+    
+    # Split interests into a list for template
+    interests_list = []
+    if profile.interests:
+        interests_list = [interest.strip() for interest in profile.interests.split(',') if interest.strip()]
+    
+    return render(request, 'a_users/profile.html', {
+        'profile': profile,
+        'interests_list': interests_list
+    })
 
 
 @login_required
@@ -112,3 +123,51 @@ def profile_delete_view(request):
         return redirect('home')
     
     return render(request, 'a_users/profile_delete.html')
+
+
+@login_required
+def generate_bio_view(request):
+    """Generate AI bio for the current user's profile"""
+    if request.method == 'POST':
+        profile = request.user.profile
+        
+        # Get data from POST request (form data sent from JavaScript)
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        profession = request.POST.get('profession', '').strip()
+        location = request.POST.get('location', '').strip()
+        interests = request.POST.get('interests', '').strip()
+        
+        # Check if user has provided any data
+        has_data = any([first_name, last_name, profession, location, interests])
+        
+        if not has_data:
+            return JsonResponse({
+                'success': False,
+                'message': 'Please fill in at least one field (profession, location, or interests) to generate a bio.'
+            })
+        
+        # Temporarily update profile with new data for bio generation
+        # (without saving to database yet)
+        profile.first_name = first_name or profile.first_name
+        profile.last_name = last_name or profile.last_name
+        profile.profession = profession or profile.profession
+        profile.location = location or profile.location
+        profile.interests = interests or profile.interests
+        
+        # Generate bio
+        bio = generate_user_bio(profile)
+        
+        if bio:
+            return JsonResponse({
+                'success': True,
+                'bio': bio,
+                'message': 'Bio generated successfully!'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to generate bio. Make sure Ollama is running.'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})

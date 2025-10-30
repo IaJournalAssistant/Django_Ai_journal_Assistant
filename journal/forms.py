@@ -52,6 +52,7 @@ class TagForm(forms.ModelForm):
         }
 # We'll handle multiple files in the template/view directly
 # This form is just for reference, actual file handling is done in views
+
 class UnifiedNoteForm(forms.ModelForm):
     """Form for the new unified note editor"""
     class Meta:
@@ -63,4 +64,5 @@ class UnifiedNoteForm(forms.ModelForm):
                 'placeholder': '# Untitled Note\n\nStart writing your note here...',
                 'style': 'font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; outline: none;'
             }),
+
         }

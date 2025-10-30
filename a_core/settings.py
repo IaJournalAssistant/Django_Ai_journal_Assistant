@@ -35,6 +35,19 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [ 'https://*' ]
 
+# Cache configuration for AI responses
+# Using file-based cache for development (works across processes)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'cache',
+        'TIMEOUT': 3600,  # 1 hour default
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
 
 # Application definition
 
@@ -125,16 +138,12 @@ WSGI_APPLICATION = 'a_core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'DjangoProject',       # 👈 name of the DB you created in pgAdmin
-        'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'islem',  # 👈 your pgAdmin password
-        'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5432',              # 👈 default PostgreSQL port
-        # 'NAME': os.getenv('DB_NAME', 'DjangoProject'),
-        # 'USER': os.getenv('DB_USER', 'postgres'),
-        # 'PASSWORD': os.getenv('DB_PASSWORD', 'okba'),
-        # 'HOST': os.getenv('DB_HOST', 'localhost'),
-        # 'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': os.getenv('DB_NAME', 'DjangoProject'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'okba'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+
     }
 }
 
@@ -202,12 +211,22 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 
+
+# Custom account adapter (not using custom signup form anymore)
+# ACCOUNT_ADAPTER = 'a_users.adapter.CustomAccountAdapter'
+# ACCOUNT_FORMS = {
+#     'signup': 'a_users.adapter.CustomSignupForm',
+# }
+
 # Disable passkey/security key features (requires HTTPS or localhost)
 MFA_PASSKEY_LOGIN_ENABLED = False
 MFA_PASSKEY_SIGNUP_ENABLED = False
 
 # Disable email verification requirement for MFA/passkeys
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
+
+# Ollama AI Configuration for bio generation
+OLLAMA_MODEL = 'gemma2:2b'  # Using the model from docker-compose.yml
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
