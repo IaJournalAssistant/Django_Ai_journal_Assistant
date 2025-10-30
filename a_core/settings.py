@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'allauth.mfa',
+    # 'allauth.mfa',  # Temporarily disabled due to cryptography issues
     'rest_framework',
     'rest_framework.authtoken',
     
@@ -121,21 +121,6 @@ DATABASES = {
     }
 }
 
-# PostgreSQL configuration (commented out for now)
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'django_planning_db',
-#         'USER': 'postgres',
-#         'PASSWORD': 'postgres',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#         'OPTIONS': {
-#             'options': '-c default_transaction_isolation=read_committed'
-#         },
-#     }
-# }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -200,18 +185,18 @@ REST_FRAMEWORK = {
     ]
 }
 
-# WebAuthn/Passkey Settings (Face Login)
+# WebAuthn/Passkey Settings (Face Login) - TEMPORARILY DISABLED
 # Enables Face ID, Windows Hello, Touch ID, and security keys
-MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
-MFA_PASSKEY_LOGIN_ENABLED = True
+# MFA_SUPPORTED_TYPES = ["totp", "webauthn", "recovery_codes"]
+# MFA_PASSKEY_LOGIN_ENABLED = True
 # Note: MFA_PASSKEY_SIGNUP_ENABLED requires mandatory email verification
 # We're using passkey LOGIN only (users add passkeys after signup)
 
 # ⚠️ DEVELOPMENT ONLY: Custom adapter that skips email verification for MFA
 # TODO: Remove this in production! Use default adapter for security
-MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
+# MFA_ADAPTER = "a_users.mfa_adapter.NoEmailVerificationMFAAdapter"
 
 # ⚠️ DEVELOPMENT ONLY: Allow passkeys on HTTP localhost
 # TODO: Remove this setting before deploying to production!
 # Production requires HTTPS - this is a security requirement of WebAuthn
-MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
+# MFA_WEBAUTHN_ALLOW_INSECURE_ORIGIN = True
