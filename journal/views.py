@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.utils import timezone
 from rest_framework import viewsets, permissions
 from .serializers import JournalEntrySerializer
 from .models import JournalEntry
 from .forms import JournalEntryForm, UnifiedNoteForm
 from media_manager.models import MediaFile
+from .webhook_service import webhook_service
 import re
 
 # ✅ REST API viewset (if you ever use API routes)
@@ -40,6 +42,15 @@ def journal_create(request):
             title=title,
             content=content
         )
+        
+        # Send to n8n webhook (non-blocking)
+        try:
+            webhook_service.send_journal_created(journal)
+        except Exception as e:
+            # Log error but don't fail the journal creation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to send journal {journal.id} to webhook: {str(e)}")
         
         # Handle multiple file uploads
         files = request.FILES.getlist('files')
@@ -145,6 +156,114 @@ def journal_detail(request, pk):
         'form': form,
         'media_files': media_files
     })
+
+
+@login_required
+def test_webhook(request):
+    """Test the n8n webhook connection"""
+    if request.method == 'POST':
+        result = webhook_service.test_webhook()
+        return JsonResponse(result)
+    
+    return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+import json
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def receive_ai_response(request):
+    """
+    Receive AI response from n8n webhook
+    This endpoint will be called by n8n after AI processing
+    """
+    try:
+        # Parse the incoming JSON data
+        data = json.loads(request.body)
+        
+        # Extract journal ID and AI response
+        journal_id = data.get('journal_id')
+        ai_response = data.get('ai_response', '')
+        response_type = data.get('response_type', 'analysis')  # analysis, summary, etc.
+        
+        if not journal_id:
+            return JsonResponse({'error': 'journal_id is required'}, status=400)
+        
+        # Get the journal entry
+        try:
+            journal = JournalEntry.objects.get(id=journal_id)
+        except JournalEntry.DoesNotExist:
+            return JsonResponse({'error': 'Journal not found'}, status=404)
+        
+        # Store the AI response (you can extend JournalEntry model or create a separate model)
+        # For now, we'll use a simple approach with session storage
+        
+        # Log the response
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Received AI response for journal {journal_id}: {ai_response[:100]}...")
+        
+        # Store in cache or session for real-time display
+        from django.core.cache import cache
+        cache_key = f"ai_response_{journal_id}"
+        cache.set(cache_key, {
+            'response': ai_response,
+            'type': response_type,
+            'timestamp': data.get('timestamp'),
+            'received_at': timezone.now().isoformat()
+        }, timeout=3600)  # Store for 1 hour
+        
+        # Return success response to n8n
+        return JsonResponse({
+            'success': True,
+            'message': 'AI response received successfully',
+            'journal_id': journal_id
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error processing AI response: {str(e)}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+@login_required
+def get_ai_response(request, journal_id):
+    """
+    Get AI response for a specific journal entry
+    This will be called by JavaScript to check for AI responses
+    """
+    try:
+        # Check if user owns this journal
+        journal = get_object_or_404(JournalEntry, id=journal_id, author=request.user)
+        
+        # Get AI response from cache
+        from django.core.cache import cache
+        cache_key = f"ai_response_{journal_id}"
+        ai_data = cache.get(cache_key)
+        
+        if ai_data:
+            return JsonResponse({
+                'success': True,
+                'has_response': True,
+                'ai_response': ai_data['response'],
+                'response_type': ai_data['type'],
+                'timestamp': ai_data.get('timestamp'),
+                'received_at': ai_data.get('received_at')
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'has_response': False,
+                'message': 'No AI response yet'
+            })
+            
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def extract_title_from_content(content):
     """Extract title from markdown-style content"""
