@@ -197,6 +197,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 
+# Disable passkey/security key features (requires HTTPS or localhost)
+MFA_PASSKEY_LOGIN_ENABLED = False
+MFA_PASSKEY_SIGNUP_ENABLED = False
+
 # Disable email verification requirement for MFA/passkeys
 ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Don't require email verification
 

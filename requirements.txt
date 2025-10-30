@@ -7,6 +7,7 @@ pillow==11.3.0
 djangorestframework==3.15.2
 psycopg[binary]
 fido2
+django-filter==24.3
 
 # AI Analysis Engine Dependencies
 numpy>=1.24.0
