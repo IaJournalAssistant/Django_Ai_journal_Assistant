@@ -4,4 +4,12 @@ media/
 __pycache__/
 db.sqlite3
 .env
+.env.docker
 .DS_Store
+
+# Docker
+data/
+staticfiles/
+
+# Ollama
+.ollama/
