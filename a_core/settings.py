@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'journal',
     'media_manager',
     'django_browser_reload',
+     'chatbot',
 ]
 
 SITE_ID = 1
@@ -113,9 +114,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'DjangoProject',       # 👈 name of the DB you created in pgAdmin
         'USER': 'postgres',          # 👈 default user (or your pg username)
-        'PASSWORD': 'jihed12345',  # 👈 your pgAdmin password
+        'PASSWORD': '123456789',  # 👈 your pgAdmin password
         'HOST': 'localhost',         # 👈 or your server IP if remote
-        'PORT': '5434',              # 👈 default PostgreSQL port
+        'PORT': '5432',              # 👈 default PostgreSQL port
     }
 }
 
@@ -176,4 +177,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ]
+    
 }
