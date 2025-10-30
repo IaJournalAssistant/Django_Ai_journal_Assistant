@@ -1,0 +1,32 @@
+# Speech-to-Text Dependencies for Django Journal App
+# Install with: pip install -r requirements-speech.txt
+
+# Option 1: OpenAI Whisper (Recommended - Most Accurate)
+# Pros: Highest accuracy, works offline, supports multiple languages
+# Cons: Larger download (~1GB models), slower processing
+openai-whisper>=20231117
+
+# Option 2: Google Speech Recognition (Alternative)
+# Pros: Good accuracy, fast processing, free tier
+# Cons: Requires internet connection, API rate limits
+SpeechRecognition>=3.10.0
+
+# Audio Processing Support
+# Required for audio format conversion and compatibility
+pydub>=0.25.1
+
+# Optional: Faster audio processing (requires system dependencies)
+# librosa>=0.10.0
+
+# System Dependencies (install separately):
+# For pydub audio conversion:
+# - Windows: Download ffmpeg from https://ffmpeg.org/download.html
+# - macOS: brew install ffmpeg
+# - Linux: sudo apt-get install ffmpeg
+
+# For SpeechRecognition offline support:
+# - pip install pocketsphinx (CMU Sphinx)
+
+# For better audio file support:
+# - pip install pyaudio (for microphone input)
+# - pip install flac (for FLAC audio files)

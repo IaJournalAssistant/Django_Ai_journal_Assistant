@@ -29,71 +29,37 @@ _NLP = None
 # runtime (e.g. import and assign) or pass a custom mapping in a future
 # extension of the API.
 TAG_KEYWORDS = {
-    'sad': [
-        'sad', 'upset', 'crying', 'tearful', 'heartbroken', 'depressed',
-        'lonely', 'miserable', 'gloomy', 'sorrow', 'grief', 'melancholy',
-        'pain', 'tragic'
-    ],
-    'happy': [
-        'happy', 'joy', 'excited', 'fun', 'cheerful', 'delighted', 'glad',
-        'ecstatic', 'bliss', 'smile', 'laugh', 'content', 'thrilled', 'relieved'
-    ],
-    'angry': [
-        'angry', 'mad', 'frustrated', 'annoyed', 'furious', 'irritated',
-        'upset', 'rage', 'resentment', 'bitter', 'offended', 'disgusted'
-    ],
-    'gossip': [
-        'gossip', 'rumor', 'story', 'tea', 'drama', 'juicy', 'scandal', 'spill',
-        'dish', 'trending', 'news', 'chat', 'buzz', 'inside scoop'
-    ],
-    'work': [
-        'work', 'office', 'project', 'deadline', 'meeting', 'task', 'job',
-        'career', 'promotion', 'boss', 'colleague', 'team', 'assignment', 'report'
-    ],
-    'travel': [
-        'travel', 'trip', 'vacation', 'holiday', 'journey', 'explore', 'adventure',
-        'flight', 'hotel', 'beach', 'mountain', 'city', 'roadtrip', 'tour'
-    ],
-    'food': [
-        'food', 'meal', 'recipe', 'cooking', 'dish', 'restaurant', 'eat', 'snack',
-        'dinner', 'lunch', 'breakfast', 'tasty', 'yummy', 'delicious', 'cafe'
-    ],
-    'health': [
-        'health', 'fitness', 'workout', 'exercise', 'gym', 'diet', 'nutrition',
-        'wellness', 'meditation', 'doctor', 'illness', 'sick', 'recover', 'mental health'
-    ],
-    'love': [
-        'love', 'relationship', 'heart', 'romance', 'dating', 'crush', 'partner',
-        'affection', 'valentine', 'hug', 'kiss', 'marriage', 'couple', 'feelings'
-    ],
-    'hobby': [
-        'hobby', 'art', 'music', 'reading', 'painting', 'drawing', 'writing',
-        'photography', 'gaming', 'craft', 'gardening', 'diy', 'dance', 'singing'
-    ],
-    'school': [
-        'school', 'class', 'teacher', 'homework', 'exam', 'study', 'lecture',
-        'assignment', 'student', 'college', 'university', 'course', 'grade', 'project'
-    ],
-    'tech': [
-        'tech', 'technology', 'computer', 'software', 'hardware', 'ai', 'app',
-        'programming', 'coding', 'gadget', 'device', 'startup', 'innovation', 'internet'
-    ],
-    'entertainment': [
-        'movie', 'series', 'tv', 'music', 'concert', 'show', 'theater', 'film',
-        'episode', 'celebrity', 'star', 'actor', 'actress', 'festival'
-    ],
-    'finance': [
-        'money', 'finance', 'budget', 'investment', 'bank', 'loan', 'pay', 'salary',
-        'saving', 'spending', 'tax', 'profit', 'expense', 'economy'
-    ],
-    'event': [
-        'party', 'celebration', 'wedding', 'birthday', 'festival', 'concert',
-        'gathering', 'ceremony', 'anniversary', 'event', 'meeting', 'ceremony'
-    ],
-    'news': [
-        'news', 'update', 'breaking', 'announcement', 'alert', 'report', 'headline',
-        'trending', 'journal', 'media', 'press', 'story', 'current', 'information'
-    ],
+    "Sad": ["sad", "upset", "crying", "tearful", "heartbroken", "depressed", "lonely", "miserable", "gloomy", "sorrow", "grief", "melancholy", "pain", "tragic"],
+    
+    "Happy": ["happy", "joy", "excited", "fun", "cheerful", "delighted", "glad", "ecstatic", "bliss", "smile", "laugh", "content", "thrilled", "relieved"],
+    
+    "Angry": ["angry", "mad", "frustrated", "annoyed", "furious", "irritated", "upset", "rage", "resentment", "bitter", "offended", "disgusted"],
+    
+    "Gossip": ["gossip", "rumor", "story", "tea", "drama", "juicy", "scandal", "spill", "dish", "trending", "news", "chat", "buzz", "inside scoop"],
+    
+    "Work": ["work", "office", "project", "deadline", "meeting", "task", "job", "career", "promotion", "boss", "colleague", "team", "assignment", "report"],
+    
+    "Travel": ["travel", "trip", "vacation", "holiday", "journey", "explore", "adventure", "flight", "hotel", "beach", "mountain", "city", "roadtrip", "tour"],
+    
+    "Food": ["food", "meal", "recipe", "cooking", "dish", "restaurant", "eat", "snack", "dinner", "lunch", "breakfast", "tasty", "yummy", "delicious", "cafe"],
+    
+    "Health": ["health", "fitness", "workout", "exercise", "gym", "diet", "nutrition", "wellness", "meditation", "doctor", "illness", "sick", "recover", "mental health"],
+    
+    "Love": ["love", "relationship", "heart", "romance", "dating", "crush", "partner", "affection", "valentine", "hug", "kiss", "marriage", "couple", "feelings"],
+    
+    "Hobby": ["hobby", "art", "music", "reading", "painting", "drawing", "writing", "photography", "gaming", "craft", "gardening", "diy", "dance", "singing"],
+    
+    "School": ["school", "class", "teacher", "homework", "exam", "study", "lecture", "assignment", "student", "college", "university", "course", "grade", "project"],
+    
+    "Tech": ["tech", "technology", "computer", "software", "hardware", "AI", "app", "programming", "coding", "gadget", "device", "startup", "innovation", "internet"],
+    
+    "Entertainment": ["movie", "series", "tv", "music", "concert", "show", "theater", "film", "episode", "celebrity", "star", "actor", "actress", "festival"],
+    
+    "Finance": ["money", "finance", "budget", "investment", "bank", "loan", "pay", "salary", "saving", "spending", "tax", "profit", "expense", "economy"],
+    
+    "Event": ["party", "celebration", "wedding", "birthday", "festival", "concert", "gathering", "ceremony", "anniversary", "event", "meeting", "ceremony"],
+    
+    "News": ["news", "update", "breaking", "announcement", "alert", "report", "headline", "trending", "journal", "media", "press", "story", "current", "information"]
 }
 
 
@@ -157,8 +123,8 @@ def predict_tags_for_texts(texts: Iterable[str], tag_objs: Iterable, top_k: int 
     if not texts or not tag_names:
         return [None] * len(texts)
 
-    # Normalize tag names and prepare keyword lookup (case-insensitive)
-    kw_map = {t.name.lower(): TAG_KEYWORDS.get(t.name.lower(), []) for t in tag_list}
+    # Normalize tag names and prepare keyword lookup
+    kw_map = {t.name.lower(): TAG_KEYWORDS.get(t.name, []) for t in tag_list}
 
     nlp = _load_nlp()
     # First attempt: keyword-based matching. For each text, count keyword

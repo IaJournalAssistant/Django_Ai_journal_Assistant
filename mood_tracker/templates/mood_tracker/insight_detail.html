@@ -1,0 +1,115 @@
+{% extends 'layouts/blank.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+                        <a href="{% url 'mood_tracker:dashboard' %}" class="hover:text-gray-700">Dashboard</a>
+                        <span>›</span>
+                        <a href="{% url 'mood_tracker:insights' %}" class="hover:text-gray-700">Insights</a>
+                        <span>›</span>
+                        <span class="text-gray-900">{{ insight.get_insight_type_display }}</span>
+                    </nav>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ insight.get_insight_type_display }}</h1>
+                    <p class="text-lg text-gray-600">
+                        {{ insight.data_period_start|date:"M j" }} - {{ insight.data_period_end|date:"M j, Y" }}
+                        ({{ insight.data_period_days }} days)
+                    </p>
+                </div>
+                <a href="{% url 'mood_tracker:insights' %}" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-all">
+                    ← Back to Insights
+                </a>
+            </div>
+        </div>
+
+        <!-- Insight Content -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-100 mb-8">
+            <!-- Insight Header -->
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                    {% if insight.insight_type == 'weekly' %}
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    {% elif insight.insight_type == 'correlation' %}
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    {% elif insight.insight_type == 'recommendation' %}
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                    {% else %}
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    {% endif %}
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ insight.get_insight_type_display }}</h2>
+                    <p class="text-gray-600">Generated on {{ insight.generated_at|date:"M j, Y \a\t g:i A" }}</p>
+                </div>
+            </div>
+
+            <!-- Insight Content -->
+            <div class="prose prose-lg max-w-none">
+                <div class="text-gray-700 leading-relaxed whitespace-pre-line">{{ insight.content }}</div>
+            </div>
+        </div>
+
+        <!-- Insight Metadata -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Analysis Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-indigo-600">{{ insight.data_period_days }}</div>
+                    <div class="text-sm text-gray-600">Days Analyzed</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">{{ insight.get_insight_type_display }}</div>
+                    <div class="text-sm text-gray-600">Analysis Type</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-pink-600">{{ insight.generated_at|timesince }} ago</div>
+                    <div class="text-sm text-gray-600">Generated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-between items-center">
+            <div class="flex space-x-4">
+                <a href="{% url 'mood_tracker:analytics' %}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-all">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    View Analytics
+                </a>
+                <a href="{% url 'mood_tracker:dashboard' %}" class="inline-flex items-center px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"/>
+                    </svg>
+                    Go to Dashboard
+                </a>
+            </div>
+            
+            <form method="post" action="{% url 'mood_tracker:archive_insight' insight.id %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-all" onclick="return confirm('Archive this insight? It will be hidden from your insights list.')">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l4 4 4-4"/>
+                    </svg>
+                    Archive Insight
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

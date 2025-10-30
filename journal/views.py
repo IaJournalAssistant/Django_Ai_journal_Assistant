@@ -278,6 +278,7 @@ def tag_delete(request, slug):
         tag.delete()
         return redirect('tag-list')
     return render(request, 'journal/tag_confirm_delete.html', {'tag': tag})
+ 
 
 def detect_file_type(filename):
     """Auto-detect file type based on extension"""
