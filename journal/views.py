@@ -5,6 +5,8 @@ from django.db.models import Q
 from rest_framework import viewsets, permissions
 from .serializers import JournalEntrySerializer
 from .models import JournalEntry, Note, Tag
+from .nlp_utils import predict_tags_for_texts
+import logging
 from .forms import JournalEntryForm, NoteForm, TagForm
 from media_manager.models import MediaFile
 
@@ -157,7 +159,41 @@ def note_list(request):
         notes = notes.filter(
             Q(title__icontains=q) | Q(content__icontains=q) | Q(tags__name__icontains=q)
         )
-    notes = notes.order_by('-updated_at')
+    # Materialize the queryset so we can attach a transient `predicted_tag`
+    # attribute to notes that do not yet have one. This keeps DB access
+    # minimal and allows batch NLP processing.
+    notes = list(notes.order_by('-updated_at'))
+
+    # Attach predicted_tag for notes without assigned tags. We fetch all
+    # Tag objects once and run batched prediction (spaCy pipe or fallback).
+    try:
+        tags_all = list(Tag.objects.all())
+        if tags_all:
+            # notes.tags is a ForeignKey on this project (single tag per note).
+            # For ForeignKey use a simple None check to detect notes without tags.
+            notes_without_tags = [n for n in notes if n.tags is None]
+            if notes_without_tags:
+                # Safety limit to avoid processing extremely large sets in one go.
+                MAX_PREDICT = 500
+                to_predict = notes_without_tags[:MAX_PREDICT]
+                contents = [getattr(n, 'content', '') or getattr(n, 'title', '') or '' for n in to_predict]
+                predicted_names = predict_tags_for_texts(contents, tags_all)
+                name_map = {t.name.lower(): t for t in tags_all}
+                for note_obj, pred_name in zip(to_predict, predicted_names):
+                    note_obj.predicted_tag = name_map.get(pred_name.lower()) if pred_name else None
+                # For notes beyond the safety limit, set predicted_tag to None
+                for n in notes_without_tags[MAX_PREDICT:]:
+                    n.predicted_tag = None
+        # Ensure every note has the attribute (templates may expect it)
+        for n in notes:
+            if not hasattr(n, 'predicted_tag'):
+                n.predicted_tag = None
+    except Exception as e:
+        logging.getLogger(__name__).exception('Tag prediction failed: %s', e)
+        for n in notes:
+            if not hasattr(n, 'predicted_tag'):
+                n.predicted_tag = None
+
     return render(request, 'journal/notes_list.html', {'notes': notes, 'q': q})
 
 

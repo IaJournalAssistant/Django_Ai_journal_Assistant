@@ -32,6 +32,8 @@
           <div>
             {% if note.tags %}
               <span class="tag-pill">{{ note.tags.name }}</span>
+            {% elif note.predicted_tag %}
+              <span class="tag-pill" title="Suggested tag">Suggested: {{ note.predicted_tag.name }}</span>
             {% else %}
               <span class="text-sm text-gray-400">No tags</span>
             {% endif %}
