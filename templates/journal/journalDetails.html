@@ -2,297 +2,336 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50">
-  <!-- Header -->
-  <div class="bg-white border-b border-gray-200 px-6 py-4">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <a href="{% url 'journal-list' %}" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-          </svg>
-        </a>
-        <h1 class="text-lg font-semibold text-gray-900">{{ entry.title }}</h1>
-      </div>
+<div class="min-h-screen bg-gray-50" data-journal-id="{{ entry.id }}">
+<!-- Header -->
+<div class="bg-white border-b border-gray-200 px-6 py-4">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <a href="{% url 'journal-list' %}" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </a>
+      <h1 class="text-lg font-semibold text-gray-900">{{ entry.title }}</h1>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <button id="editBtn" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        Edit
+      </button>
       
-      <div class="flex items-center space-x-3">
-        <button id="editBtn" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-          Edit
-        </button>
-        <button id="addMediaBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-          Add Media
-        </button>
-        <a href="{% url 'journal-create' %}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
-          New Note
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Journal Content -->
-  <div class="max-w-4xl mx-auto p-8">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-      <!-- View Mode -->
-      <div id="viewMode" class="p-8">
-        <div class="prose prose-lg max-w-none">
-          <div class="text-gray-900 whitespace-pre-wrap leading-relaxed" style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">{{ entry.content }}</div>
-        </div>
-        <div class="mt-8 pt-6 border-t border-gray-100">
-          <p class="text-sm text-gray-500">Created {{ entry.created_at|date:"F d, Y" }} at {{ entry.created_at|date:"g:i A" }} by {{ entry.author.username }}</p>
-        </div>
-      </div>
-
-      <!-- Edit Mode -->
-      <div id="editMode" class="hidden p-8">
-        <form id="editForm">
-          {% csrf_token %}
-          <div class="space-y-6">
-            <div>
-              <textarea 
-                name="content"
-                id="editContent"
-                class="w-full h-96 resize-none border-0 focus:ring-0 text-gray-900 text-lg leading-relaxed"
-                style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; outline: none;"
-              >{{ entry.content }}</textarea>
-            </div>
-            <div class="flex space-x-3 pt-4 border-t border-gray-100">
-              <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                Save Changes
-              </button>
-              <button type="button" id="cancelEdit" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Media Files Section -->
-  {% if media_files %}
-  <div class="mt-8">
-    <h3 class="text-xl font-bold mb-4">📎 Attached Media</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="mediaGrid">
-      {% for media in media_files %}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-          <!-- Media Preview -->
-          <div class="aspect-w-16 aspect-h-9 bg-gray-100">
-            {% if media.file_type == 'image' %}
-              <img src="{{ media.file.url }}" alt="{{ media.caption|default:'Image' }}" 
-                   class="w-full h-48 object-cover">
-            {% elif media.file_type == 'video' %}
-              <video controls class="w-full h-48 object-cover">
-                <source src="{{ media.file.url }}" type="video/mp4">
-                Your browser does not support the video tag.
-              </video>
-            {% elif media.file_type == 'audio' %}
-              <div class="flex items-center justify-center h-48 bg-gradient-to-br from-blue-100 to-purple-100">
-                <div class="text-center">
-                  <svg class="mx-auto h-12 w-12 text-blue-500 mb-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 12a5.984 5.984 0 01-.757 2.828 1 1 0 11-1.415-1.414A3.987 3.987 0 0013 12a3.988 3.988 0 00-.172-1.414 1 1 0 010-1.415z" clip-rule="evenodd"/>
-                  </svg>
-                  <p class="text-sm font-medium text-gray-700">Audio File</p>
-                  
-                  <!-- Transcription Status -->
-                  {% if media.transcription_status == 'completed' and media.transcription %}
-                    <div class="mt-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                      ✓ Transcribed
-                    </div>
-                  {% elif media.transcription_status == 'processing' %}
-                    <div class="mt-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                      ⏳ Processing...
-                    </div>
-                  {% elif media.transcription_status == 'failed' %}
-                    <div class="mt-2 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
-                      ✗ Failed
-                    </div>
-                  {% endif %}
-                </div>
-              </div>
-              <audio controls class="w-full mt-2">
-                <source src="{{ media.file.url }}" type="audio/mpeg">
-                Your browser does not support the audio element.
-              </audio>
-              
-              <!-- Transcription Display -->
-              {% if media.transcription_status == 'completed' and media.transcription %}
-                <div class="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <div class="flex items-center justify-between mb-2">
-                    <h5 class="text-sm font-medium text-gray-700">Transcription</h5>
-                    {% if media.transcription_confidence %}
-                      <span class="text-xs text-gray-500">
-                        {{ media.transcription_confidence|floatformat:0 }}% confidence
-                      </span>
-                    {% endif %}
-                  </div>
-                  <p class="text-sm text-gray-600">{{ media.transcription }}</p>
-                </div>
-              {% elif media.transcription_status == 'pending' %}
-                <div class="mt-3 text-center">
-                  <button data-media-id="{{ media.id }}" class="transcribe-btn text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    🎤 Generate Transcription
-                  </button>
-                </div>
-              {% elif media.transcription_status == 'failed' %}
-                <div class="mt-3 text-center">
-                  <button data-media-id="{{ media.id }}" class="transcribe-btn text-orange-600 hover:text-orange-800 text-sm font-medium">
-                    🔄 Retry Transcription
-                  </button>
-                </div>
-              {% endif %}
-            {% elif media.file_type == 'document' %}
-              <div class="flex items-center justify-center h-48 bg-gradient-to-br from-red-100 to-orange-100">
-                <div class="text-center">
-                  <svg class="mx-auto h-12 w-12 text-red-500 mb-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
-                  </svg>
-                  <p class="text-sm font-medium text-gray-700">Document</p>
-                </div>
-              </div>
-            {% else %}
-              <div class="flex items-center justify-center h-48 bg-gray-100">
-                <svg class="h-12 w-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                </svg>
-              </div>
-            {% endif %}
-          </div>
-
-          <!-- Media Info -->
-          <div class="p-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="inline-block px-2 py-1 text-xs font-medium rounded-full
-                         {% if media.file_type == 'image' %}bg-green-100 text-green-800
-                         {% elif media.file_type == 'video' %}bg-purple-100 text-purple-800
-                         {% elif media.file_type == 'audio' %}bg-blue-100 text-blue-800
-                         {% elif media.file_type == 'document' %}bg-red-100 text-red-800
-                         {% else %}bg-gray-100 text-gray-800{% endif %}">
-                {{ media.get_file_type_display }}
-              </span>
-              <span class="text-xs text-gray-500">{{ media.uploaded_at|timesince }} ago</span>
-            </div>
-            
-            <h4 class="font-medium text-gray-900 truncate mb-1">
-              {{ media.file.name|slice:"12:" }}
-            </h4>
-            
-            {% if media.caption %}
-              <p class="text-sm text-gray-600 mb-2">{{ media.caption }}</p>
-            {% endif %}
-            
-            <a href="{{ media.file.url }}" target="_blank" 
-               class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium">
-              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-              Download
-            </a>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Add Media Modal -->
-  <div id="mediaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Add Media Files</h3>
-            <button id="closeModal" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-
-          <form id="mediaUploadForm" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="hidden" name="upload_media" value="1">
-            
-            <!-- Voice Recording Section -->
-            <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 class="font-medium text-gray-700 mb-3 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
-                </svg>
-                Voice Recording
-              </h4>
-              
-              <div class="flex items-center space-x-3">
-                <button type="button" id="modalRecordBtn" class="flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
-                  <svg id="modalMicIcon" class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
-                  </svg>
-                  <span id="modalRecordText">Start Recording</span>
-                </button>
-                
-                <div id="modalRecordingTimer" class="text-sm text-gray-600 hidden">
-                  <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>
-                  <span id="modalTimerText">00:00</span>
-                </div>
-                
-                <div id="modalRecordingControls" class="flex items-center space-x-2 hidden">
-                  <button type="button" id="modalStopBtn" class="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm">Stop</button>
-                  <button type="button" id="modalCancelRecordBtn" class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm">Cancel</button>
-                </div>
-              </div>
-              
-              <!-- Voice Recordings Preview -->
-              <div id="modalVoiceRecordings" class="mt-4 space-y-2 hidden">
-                <h5 class="font-medium text-gray-700">Voice Recordings:</h5>
-                <div id="modalVoiceList" class="space-y-2"></div>
-              </div>
-            </div>
-            
-            <!-- File Drop Zone -->
-            <div id="mediaDropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors cursor-pointer">
-              <input type="file" id="mediaFileInput" name="files" multiple 
-                     accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" 
-                     class="hidden">
-              <div class="space-y-2">
-                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <p class="text-gray-600">Click to select files or drag and drop</p>
-                <p class="text-sm text-gray-500">Images, Videos, Audio, Documents supported</p>
-              </div>
-            </div>
-
-            <!-- File Preview Area -->
-            <div id="mediaFilePreview" class="mt-4 space-y-2 hidden">
-              <h4 class="font-medium text-gray-700">Selected Files:</h4>
-              <div id="mediaFileList" class="space-y-2"></div>
-            </div>
-
-            <div class="flex justify-end space-x-2 mt-6">
-              <button type="button" id="cancelUpload" class="btn btn-secondary">Cancel</button>
-              <button type="submit" class="btn btn-primary">Upload Files</button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <a href="{% url 'journal-delete' pk=entry.id %}" 
+         class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        Delete
+      </a>
+      
+      <div class="h-6 w-px bg-gray-300"></div>
+      
+      <a href="{% url 'journal-create' %}" 
+         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        New Entry
+      </a>
     </div>
   </div>
 </div>
 
+<!-- Journal Content -->
+<div class="max-w-4xl mx-auto p-8">
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+    <!-- View Mode -->
+    <div id="viewMode" class="p-8">
+      <div class="prose prose-lg max-w-none">
+        <div class="text-gray-900 whitespace-pre-wrap leading-relaxed"
+          style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;">{{ entry.content }}</div>
+      </div>
+      
+      <!-- AI Response Section -->
+      <div id="aiResponseSection" class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-blue-800 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            AI Analysis
+          </h3>
+          <span id="aiTimestamp" class="text-sm text-blue-600"></span>
+        </div>
+        <div id="aiResponseContent" class="text-gray-700 whitespace-pre-wrap bg-white p-3 rounded border"></div>
+      </div>
+
+      <!-- Media Files Section -->
+      {% if media_files %}
+      <div class="mt-8 pt-6 border-t border-gray-100">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+            </svg>
+            Attachments ({{ media_files.count }})
+          </h3>
+          <button id="addMediaBtn" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Media
+          </button>
+        </div>
+        
+        <div class="space-y-4">
+          {% for media in media_files %}
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200">
+            <div class="flex flex-col lg:flex-row">
+              <!-- Media Preview -->
+              <div class="lg:w-80 flex-shrink-0">
+                {% if media.file_type == 'image' %}
+                <div class="relative group">
+                  <img src="{{ media.file.url }}" alt="{{ media.caption|default:'Image' }}" 
+                       class="w-full h-48 lg:h-full object-cover cursor-pointer"
+                       onclick="openImageModal('{{ media.file.url }}', '{{ media.caption|default:'Image' }}')">
+                  <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                    </svg>
+                  </div>
+                </div>
+                {% elif media.file_type == 'video' %}
+                <div class="relative">
+                  <video controls class="w-full h-48 lg:h-full object-cover bg-gray-900" preload="metadata">
+                    <source src="{{ media.file.url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+                {% elif media.file_type == 'audio' %}
+                <div class="h-48 lg:h-full bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-6">
+                  <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <p class="text-sm font-medium text-gray-700 mb-2">Audio Recording</p>
+                  
+                  <!-- Transcription Status -->
+                  {% if media.transcription_status == 'completed' and media.transcription %}
+                  <div class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
+                    ✓ Transcribed
+                  </div>
+                  {% elif media.transcription_status == 'processing' %}
+                  <div class="px-3 py-1 bg-amber-100 text-amber-700 text-xs rounded-full font-medium animate-pulse">
+                    ⏳ Processing...
+                  </div>
+                  {% elif media.transcription_status == 'failed' %}
+                  <div class="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
+                    ✗ Failed
+                  </div>
+                  {% else %}
+                  <div class="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                    Pending
+                  </div>
+                  {% endif %}
+                </div>
+                {% elif media.file_type == 'document' %}
+                <div class="h-48 lg:h-full bg-gradient-to-br from-red-50 to-orange-100 flex flex-col items-center justify-center p-6">
+                  <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                    </svg>
+                  </div>
+                  <p class="text-sm font-medium text-gray-700">Document</p>
+                </div>
+                {% else %}
+                <div class="h-48 lg:h-full bg-gray-50 flex items-center justify-center">
+                  <svg class="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Media Content -->
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-4">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                 {% if media.file_type == 'image' %}bg-green-100 text-green-800
+                                 {% elif media.file_type == 'video' %}bg-purple-100 text-purple-800
+                                 {% elif media.file_type == 'audio' %}bg-blue-100 text-blue-800
+                                 {% elif media.file_type == 'document' %}bg-red-100 text-red-800
+                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ media.get_file_type_display }}
+                      </span>
+                      <span class="text-xs text-gray-500">{{ media.uploaded_at|timesince }} ago</span>
+                    </div>
+                    
+                    <h4 class="text-lg font-semibold text-gray-900 mb-1">
+                      {{ media.file.name|slice:"12:" }}
+                    </h4>
+                    
+                    {% if media.caption %}
+                    <p class="text-sm text-gray-600 mb-3">{{ media.caption }}</p>
+                    {% endif %}
+                  </div>
+                  
+                  <a href="{{ media.file.url }}" target="_blank" 
+                     class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Download
+                  </a>
+                </div>
+
+                <!-- Audio Player -->
+                {% if media.file_type == 'audio' %}
+                <div class="mb-4">
+                  <audio controls class="w-full h-10 bg-gray-50 rounded-lg">
+                    <source src="{{ media.file.url }}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+                {% endif %}
+
+                <!-- Transcription Display -->
+                {% if media.file_type == 'audio' %}
+                  {% if media.transcription_status == 'completed' and media.transcription %}
+                  <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                      <h5 class="text-sm font-semibold text-gray-700 flex items-center">
+                        <svg class="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Transcription
+                      </h5>
+                      {% if media.transcription_confidence %}
+                      <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
+                        {{ media.transcription_confidence|floatformat:0 }}% confidence
+                      </span>
+                      {% endif %}
+                    </div>
+                    <p class="text-sm text-gray-700 leading-relaxed">{{ media.transcription }}</p>
+                  </div>
+                  {% elif media.transcription_status == 'pending' or media.transcription_status == 'failed' %}
+                  <div class="text-center">
+                    <button data-media-id="{{ media.id }}" 
+                            class="transcribe-btn inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                      </svg>
+                      {% if media.transcription_status == 'failed' %}Retry Transcription{% else %}Generate Transcription{% endif %}
+                    </button>
+                  </div>
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="mt-8 pt-6 border-t border-gray-100"></div>
+      <p class="text-sm text-gray-500">Created {{ entry.created_at|date:"F d, Y" }} at {{ entry.created_at|date:"g:i A"
+        }} by {{ entry.author.username }}</p>
+    </div>
+  </div>
+
+  <!-- Edit Mode -->
+  <div id="editMode" class="hidden p-8">
+    <form id="editForm">
+      {% csrf_token %}
+      <div class="space-y-6">
+        <div>
+          <textarea name="content" id="editContent"
+            class="w-full h-96 resize-none border-0 focus:ring-0 text-gray-900 text-lg leading-relaxed"
+            style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; outline: none;">{{ entry.content }}</textarea>
+        </div>
+        <div class="flex space-x-3 pt-4 border-t border-gray-100">
+          <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+            Save Changes
+          </button>
+          <button type="button" id="cancelEdit"
+            class="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Get journal ID
+    const journalId = parseInt(document.querySelector('[data-journal-id]').getAttribute('data-journal-id') || '0');
+    
+    // Simple AI response check
+    async function checkAIResponse() {
+        try {
+            const response = await fetch(`/journal/ai-response/${journalId}/`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.has_response) {
+                    displayAIResponse(data.ai_response);
+                    return true;
+                }
+            }
+        } catch (error) {
+            console.log('AI response check failed:', error);
+        }
+        return false;
+    }
+    
+    // Display AI response
+    function displayAIResponse(aiText) {
+        const section = document.getElementById('aiResponseSection');
+        const content = document.getElementById('aiResponseContent');
+        const timestamp = document.getElementById('aiTimestamp');
+        
+        if (section && content) {
+            content.textContent = aiText;
+            timestamp.textContent = `Generated ${new Date().toLocaleTimeString()}`;
+            section.classList.remove('hidden');
+        }
+    }
+    
+    // Check for AI response immediately
+    checkAIResponse();
+    
+    // For recent journals (created in last 10 minutes), keep checking
+    const createdAt = new Date('{{ entry.created_at|date:"c" }}');
+    const now = new Date();
+    const timeDiff = (now - createdAt) / 1000 / 60; // minutes
+    
+    if (timeDiff < 10) {
+        let checkCount = 0;
+        const interval = setInterval(async () => {
+            checkCount++;
+            const found = await checkAIResponse();
+            if (found || checkCount >= 12) { // Stop after 1 minute or when found
+                clearInterval(interval);
+            }
+        }, 5000);
+    }
+    
+    // Edit functionality
     const editBtn = document.getElementById('editBtn');
     const addMediaBtn = document.getElementById('addMediaBtn');
     const viewMode = document.getElementById('viewMode');
     const editMode = document.getElementById('editMode');
     const editForm = document.getElementById('editForm');
     const cancelEdit = document.getElementById('cancelEdit');
-    const mediaModal = document.getElementById('mediaModal');
-    const closeModal = document.getElementById('closeModal');
-    const cancelUpload = document.getElementById('cancelUpload');
-    const mediaUploadForm = document.getElementById('mediaUploadForm');
 
-    // Edit functionality
     editBtn.addEventListener('click', () => {
         viewMode.classList.add('hidden');
         editMode.classList.remove('hidden');
@@ -328,345 +367,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Voice Recording Variables for Modal
-    let modalMediaRecorder;
-    let modalAudioChunks = [];
-    let modalIsRecording = false;
-    let modalRecordingTimerInterval;
-    let modalStartTime;
-    const modalRecordedAudios = [];
-    
-    const modalRecordBtn = document.getElementById('modalRecordBtn');
-    const modalRecordText = document.getElementById('modalRecordText');
-    const modalMicIcon = document.getElementById('modalMicIcon');
-    const modalRecordingTimerEl = document.getElementById('modalRecordingTimer');
-    const modalTimerText = document.getElementById('modalTimerText');
-    const modalRecordingControls = document.getElementById('modalRecordingControls');
-    const modalStopBtn = document.getElementById('modalStopBtn');
-    const modalCancelRecordBtn = document.getElementById('modalCancelRecordBtn');
-    const modalVoiceRecordings = document.getElementById('modalVoiceRecordings');
-    const modalVoiceList = document.getElementById('modalVoiceList');
+    // Note: Delete functionality now handled by direct link to delete page
 
-    // Media upload functionality
-    addMediaBtn.addEventListener('click', () => {
-        mediaModal.classList.remove('hidden');
-    });
-
-    closeModal.addEventListener('click', () => {
-        mediaModal.classList.add('hidden');
-    });
-
-    cancelUpload.addEventListener('click', () => {
-        mediaModal.classList.add('hidden');
-    });
-
-    // File upload handling (reuse from create.html)
-    const mediaDropzone = document.getElementById('mediaDropzone');
-    const mediaFileInput = document.getElementById('mediaFileInput');
-    const mediaFilePreview = document.getElementById('mediaFilePreview');
-    const mediaFileList = document.getElementById('mediaFileList');
-
-    mediaDropzone.addEventListener('click', () => mediaFileInput.click());
-
-    mediaDropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        mediaDropzone.classList.add('border-blue-400', 'bg-blue-50');
-    });
-
-    mediaDropzone.addEventListener('dragleave', () => {
-        mediaDropzone.classList.remove('border-blue-400', 'bg-blue-50');
-    });
-
-    mediaDropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        mediaDropzone.classList.remove('border-blue-400', 'bg-blue-50');
-        
-        const files = e.dataTransfer.files;
-        mediaFileInput.files = files;
-        displayMediaFiles(files);
-    });
-
-    mediaFileInput.addEventListener('change', (e) => {
-        displayMediaFiles(e.target.files);
-    });
-
-    // Modal Voice Recording Functions
-    modalRecordBtn.addEventListener('click', async () => {
-        if (!modalIsRecording) {
-            await startModalRecording();
-        }
-    });
-    
-    modalStopBtn.addEventListener('click', () => {
-        stopModalRecording();
-    });
-    
-    modalCancelRecordBtn.addEventListener('click', () => {
-        cancelModalRecording();
-    });
-    
-    async function startModalRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            modalMediaRecorder = new MediaRecorder(stream);
-            modalAudioChunks = [];
-            
-            modalMediaRecorder.ondataavailable = (event) => {
-                modalAudioChunks.push(event.data);
-            };
-            
-            modalMediaRecorder.onstop = () => {
-                const audioBlob = new Blob(modalAudioChunks, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                addModalVoiceRecording(audioBlob, audioUrl);
-                
-                // Stop all tracks to release microphone
-                stream.getTracks().forEach(track => track.stop());
-            };
-            
-            modalMediaRecorder.start();
-            modalIsRecording = true;
-            modalStartTime = Date.now();
-            
-            // Update UI
-            modalRecordBtn.classList.add('hidden');
-            modalRecordingTimerEl.classList.remove('hidden');
-            modalRecordingControls.classList.remove('hidden');
-            
-            // Start timer
-            modalRecordingTimerInterval = setInterval(updateModalTimer, 1000);
-            
-        } catch (error) {
-            console.error('Error accessing microphone:', error);
-            alert('Could not access microphone. Please check permissions.');
-        }
-    }
-    
-    function stopModalRecording() {
-        if (modalMediaRecorder && modalIsRecording) {
-            modalMediaRecorder.stop();
-            modalIsRecording = false;
-            clearInterval(modalRecordingTimerInterval);
-            
-            // Reset UI
-            modalRecordBtn.classList.remove('hidden');
-            modalRecordingTimerEl.classList.add('hidden');
-            modalRecordingControls.classList.add('hidden');
-            modalRecordText.textContent = 'Start Recording';
-        }
-    }
-    
-    function cancelModalRecording() {
-        if (modalMediaRecorder && modalIsRecording) {
-            modalMediaRecorder.stop();
-            modalIsRecording = false;
-            clearInterval(modalRecordingTimerInterval);
-            modalAudioChunks = [];
-            
-            // Reset UI
-            modalRecordBtn.classList.remove('hidden');
-            modalRecordingTimerEl.classList.add('hidden');
-            modalRecordingControls.classList.add('hidden');
-            modalRecordText.textContent = 'Start Recording';
-        }
-    }
-    
-    function updateModalTimer() {
-        const elapsed = Math.floor((Date.now() - modalStartTime) / 1000);
-        const minutes = Math.floor(elapsed / 60);
-        const seconds = elapsed % 60;
-        modalTimerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    function addModalVoiceRecording(audioBlob, audioUrl) {
-        const recordingId = Date.now();
-        modalRecordedAudios.push({ id: recordingId, blob: audioBlob, url: audioUrl });
-        
-        const voiceItem = document.createElement('div');
-        voiceItem.className = 'flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200';
-        voiceItem.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 flex items-center justify-center bg-blue-100 rounded-full">
-                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217z" clip-rule="evenodd"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900">Voice Recording</p>
-                    <p class="text-sm text-gray-500">Audio message</p>
-                </div>
-            </div>
-            <div class="flex items-center space-x-2">
-                <audio controls class="h-8">
-                    <source src="${audioUrl}" type="audio/wav">
-                </audio>
-                <input type="text" placeholder="Add caption..." 
-                       class="px-2 py-1 border border-gray-300 rounded text-sm w-32"
-                       data-modal-recording-id="${recordingId}">
-                <button type="button" onclick="removeModalVoiceRecording(${recordingId})" 
-                        class="text-red-500 hover:text-red-700">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        modalVoiceList.appendChild(voiceItem);
-        modalVoiceRecordings.classList.remove('hidden');
-    }
-    
-    window.removeModalVoiceRecording = function(recordingId) {
-        const index = modalRecordedAudios.findIndex(audio => audio.id === recordingId);
-        if (index > -1) {
-            URL.revokeObjectURL(modalRecordedAudios[index].url);
-            modalRecordedAudios.splice(index, 1);
-        }
-        
-        const voiceItem = document.querySelector(`[data-modal-recording-id="${recordingId}"]`).closest('.flex');
-        voiceItem.remove();
-        
-        if (modalRecordedAudios.length === 0) {
-            modalVoiceRecordings.classList.add('hidden');
-        }
-    };
-
-    mediaUploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(mediaUploadForm);
-        
-        // Add voice recordings to form data
-        modalRecordedAudios.forEach((audio, index) => {
-            const file = new File([audio.blob], `voice_recording_${Date.now()}_${index}.wav`, {
-                type: 'audio/wav'
-            });
-            formData.append('voice_recordings', file);
-            
-            // Add caption
-            const captionInput = document.querySelector(`[data-modal-recording-id="${audio.id}"]`);
-            if (captionInput && captionInput.value) {
-                formData.append(`voice_caption_${index}`, captionInput.value);
-            }
-        });
-
-        try {
-            const response = await fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                location.reload();
-            } else {
-                alert('Error uploading files');
-            }
-        } catch (error) {
-            alert('Error uploading files');
-        }
-    });
-
-    function displayMediaFiles(files) {
-        if (files.length === 0) {
-            mediaFilePreview.classList.add('hidden');
-            return;
-        }
-
-        mediaFilePreview.classList.remove('hidden');
-        mediaFileList.innerHTML = '';
-
-        Array.from(files).forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
-            
-            const fileType = detectFileType(file.name);
-            const fileIcon = getFileIcon(fileType);
-            
-            fileItem.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 flex items-center justify-center">
-                        ${fileIcon}
-                    </div>
-                    <div>
-                        <p class="font-medium text-gray-900">${file.name}</p>
-                        <p class="text-sm text-gray-500">${formatFileSize(file.size)} • ${fileType}</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <input type="text" name="caption_${file.name}" placeholder="Add caption..." 
-                           class="px-2 py-1 border border-gray-300 rounded text-sm w-32">
-                    <button type="button" onclick="removeMediaFile(${index})" 
-                            class="text-red-500 hover:text-red-700">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                    </button>
-                </div>
-            `;
-            
-            mediaFileList.appendChild(fileItem);
-        });
-    }
-
-    // Utility functions (same as create.html)
-    function detectFileType(filename) {
-        const ext = filename.toLowerCase().split('.').pop();
-        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-        const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
-        const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma'];
-        const docExts = ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'];
-
-        if (imageExts.includes(ext)) return 'image';
-        if (videoExts.includes(ext)) return 'video';
-        if (audioExts.includes(ext)) return 'audio';
-        if (docExts.includes(ext)) return 'document';
-        return 'other';
-    }
-
-    function getFileIcon(type) {
-        const icons = {
-            image: '<svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>',
-            video: '<svg class="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>',
-            audio: '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM15.657 6.343a1 1 0 011.414 0A9.972 9.972 0 0119 12a9.972 9.972 0 01-1.929 5.657 1 1 0 11-1.414-1.414A7.971 7.971 0 0017 12c0-2.21-.895-4.21-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 12a5.984 5.984 0 01-.757 2.828 1 1 0 11-1.415-1.414A3.987 3.987 0 0013 12a3.988 3.988 0 00-.172-1.414 1 1 0 010-1.415z" clip-rule="evenodd"/></svg>',
-            document: '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>',
-            other: '<svg class="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>'
-        };
-        return icons[type] || icons.other;
-    }
-
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    window.removeMediaFile = function(index) {
-        const dt = new DataTransfer();
-        const files = Array.from(mediaFileInput.files);
-        files.splice(index, 1);
-        
-        files.forEach(file => dt.items.add(file));
-        mediaFileInput.files = dt.files;
-        
-        displayMediaFiles(mediaFileInput.files);
-    };
-    
-    // Speech-to-text functions
+    // Transcription functionality
     document.addEventListener('click', async function(e) {
         if (e.target.classList.contains('transcribe-btn')) {
             const button = e.target;
             const mediaId = button.getAttribute('data-media-id');
             const originalText = button.textContent;
-            
-            // Update button state
+
             button.textContent = '⏳ Processing...';
             button.disabled = true;
-            
+
             try {
                 const response = await fetch(`/media/transcribe/${mediaId}/`, {
                     method: 'POST',
@@ -675,25 +387,61 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Content-Type': 'application/json'
                     }
                 });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Reload page to show transcription
+
+                if (response.ok) {
+                    // Reload page to show updated transcription
                     location.reload();
                 } else {
-                    alert('Transcription failed: ' + (result.error || 'Unknown error'));
-                    button.textContent = originalText;
-                    button.disabled = false;
+                    button.textContent = '❌ Failed';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.disabled = false;
+                    }, 2000);
                 }
             } catch (error) {
-                console.error('Transcription error:', error);
-                alert('Transcription failed. Please try again.');
-                button.textContent = originalText;
-                button.disabled = false;
+                button.textContent = '❌ Error';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 2000);
             }
         }
     });
+
+    // Image modal functionality
+    window.openImageModal = function(imageUrl, caption) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+        modal.innerHTML = `
+            <div class="relative max-w-4xl max-h-full">
+                <img src="${imageUrl}" alt="${caption}" class="max-w-full max-h-full object-contain rounded-lg">
+                <button onclick="this.closest('.fixed').remove()" 
+                        class="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                ${caption ? `<div class="absolute bottom-4 left-4 right-4 text-white bg-black bg-opacity-50 rounded-lg p-3 text-center">${caption}</div>` : ''}
+            </div>
+        `;
+        
+        // Close on click outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+            }
+        }, { once: true });
+        
+        document.body.appendChild(modal);
+    };
 });
 </script>
+
 {% endblock %}
