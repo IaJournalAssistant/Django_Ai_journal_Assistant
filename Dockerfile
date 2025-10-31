@@ -14,12 +14,20 @@ RUN apt-get update \
         python3-dev \
         libpq-dev \
         curl \
+        ffmpeg \
+        wget \
+        tesseract-ocr \
+        tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt requirements-speech.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements-speech.txt
+
+# Pre-download AI models to avoid runtime downloads
+RUN python -c "import whisper; whisper.load_model('small')" || true
+RUN python -c "import nltk; nltk.download('punkt'); nltk.download('brown')" || true
 
 # Copy project
 COPY . .

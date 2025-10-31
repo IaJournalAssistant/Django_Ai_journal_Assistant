@@ -35,11 +35,15 @@ services:
 
   django-migrate:
     build: .
+    volumes:
+      - whisper_cache:/home/appuser/.cache/whisper
     env_file:
       - .env.docker
     depends_on:
       postgres:
         condition: service_healthy
+      whisper-setup:
+        condition: service_completed_successfully
     command: |
       sh -c "
         echo 'Checking for migration changes...'
@@ -72,6 +76,7 @@ services:
     volumes:
       - ./media:/app/media
       - ./static:/app/staticfiles
+      - whisper_cache:/home/appuser/.cache/whisper
     env_file:
       - .env.docker
     depends_on:
@@ -81,6 +86,8 @@ services:
         condition: service_completed_successfully
       ollama:
         condition: service_healthy
+      whisper-setup:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   ollama:
@@ -116,7 +123,20 @@ services:
       "
     restart: "no"
 
+  whisper-setup:
+    build: .
+    volumes:
+      - whisper_cache:/home/appuser/.cache/whisper
+    entrypoint: |
+      sh -c "
+        echo 'Downloading Whisper models...'
+        python -c 'import whisper; whisper.load_model(\"small\")'
+        echo 'Whisper models downloaded!'
+      "
+    restart: "no"
+
 volumes:
   postgres_data:
   pgadmin_data:
   ollama_data:
+  whisper_cache:

@@ -9,8 +9,9 @@ echo "Building and starting services..."
 docker-compose up --build -d
 
 echo "Waiting for services to be ready..."
+echo "Downloading AI models (Ollama + Whisper)..."
 echo "Migrations will run automatically..."
-sleep 45
+sleep 60
 
 echo "Creating superuser (optional - you can skip this)..."
 echo "Run: docker-compose exec web python manage.py createsuperuser"

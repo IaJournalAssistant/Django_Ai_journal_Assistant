@@ -28,6 +28,8 @@ The Docker setup includes automatic:
 3. **Cache table** creation (if it doesn't exist)
 4. **Static files** collection
 5. **Ollama model** download (gemma2:2b)
+6. **Whisper model** download (small) for audio processing
+7. **FFmpeg** installation (includes ffprobe) for audio file handling
 
 ### Smart Migration Logic
 - Checks if new migrations are needed with `--dry-run --check`
@@ -152,12 +154,26 @@ docker-compose up --build -d
 docker-compose ps
 ```
 
+### Audio processing issues:
+```bash
+# Check if ffmpeg and ffprobe are installed
+docker-compose exec web ffmpeg -version
+docker-compose exec web ffprobe -version
+
+# Re-download Whisper models
+docker-compose exec web python -c "import whisper; whisper.load_model('small')"
+
+# Check Whisper cache
+docker-compose exec web ls -la /home/appuser/.cache/whisper/
+```
+
 ## Data Persistence
 
 The following volumes are created:
 - `postgres_data` - PostgreSQL database data
 - `pgadmin_data` - pgAdmin configuration and data
 - `ollama_data` - Ollama models and data
+- `whisper_cache` - Whisper AI models cache
 - `./media` - User uploaded files (mounted directory)
 - `./static` - Static files (mounted directory)
 

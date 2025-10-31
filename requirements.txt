@@ -1,4 +1,4 @@
-django==5.2.4
+Django==5.2.4
 django-allauth==65.9.0
 django-browser-reload==1.18.0
 django-cleanup==9.0.0
@@ -11,49 +11,30 @@ spacy>=3.0.0
 # REST / API
 djangorestframework==3.15.2
 django-filter==24.3
+django-cors-headers>=4.0.0
 
 # Database / Security
 psycopg[binary]
 fido2
-
-psycopg[binary]
-requests
-
+requests>=2.28.0
 
 # AI Analysis Engine Dependencies
 numpy>=1.24.0
 pandas>=2.0.0
 scipy>=1.10.0
-requests>=2.28.0
 
 # Environment variables
 python-dotenv>=1.0.0
-pip install pillow djangorestframework django-cors-headers pytesseract torch torchvision torchaudio openai-whisper transformers
-OCR et Analyse d’images
 
-Tesseract OCR (pour extraire le texte des images)
+# OCR and Image Analysis
+pytesseract>=0.3.10
 
-Installer Tesseract : https://github.com/tesseract-ocr/tesseract
+# Deep Learning and AI
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+transformers>=4.30.0
+openai-whisper>=20231117
 
-Ajouter tesseract.exe au PATH.
-
-Installer la bibliothèque Python : pip install pytesseract
-Analyse de sentiment
-
-Tu peux utiliser TextBlob ou transformers :
-
-pip install textblob
-python -m textblob.download_corpora
-# ou si tu veux un modèle Hugging Face pour sentiment :
-pip install transformers torch
-
-*Analyse d’émotion sur image
-
-Pour l’instant tu sembles utiliser un script personnalisé (analyze_emotion).
-
-Si tu veux Deep Learning :
-
-pip install tensorflow keras
-# ou pour PyTorch
-pip install torch torchvision torchaudio
-
+# Text Analysis
+textblob>=0.17.1
