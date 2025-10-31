@@ -52,9 +52,9 @@
                     </div>
                     
                     <div class="flex items-center gap-2 ml-4">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium {% if task.status == 'completed' %}bg-green-100 text-green-700{% elif task.status == 'in_progress' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+                        <button onclick="toggleTaskStatus({{ task.id }})" class="px-2 py-1 rounded-full text-xs font-medium transition-all hover:opacity-80 {% if task.status == 'completed' %}bg-green-100 text-green-700{% elif task.status == 'in_progress' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %}" title="Click to change status">
                             {{ task.get_status_display }}
-                        </span>
+                        </button>
                         <a href="{% url 'planning:task-detail' task.id %}" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1 rounded-lg text-sm font-medium transition-all">
                             View
                         </a>
@@ -83,4 +83,70 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+function toggleTaskStatus(taskId) {
+    fetch(`/planning/htmx/tasks/${taskId}/toggle-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            // Show success message and reload page to update UI
+            showNotification('Task status updated successfully!', 'success');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showNotification('Failed to update task status', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Network error: ' + error.message, 'error');
+    });
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all transform translate-x-full ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

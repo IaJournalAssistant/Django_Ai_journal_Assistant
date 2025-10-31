@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import Task, Project, Goal, TaskComment, AIInsight
+from .models import Task, Project, Goal, TaskComment, AIInsight, AIResponseCache
 from .services import ai_service
 
 
@@ -367,6 +367,129 @@ def project_detail_view(request, project_id):
 
 
 @login_required
+def project_edit_view(request, project_id):
+    """
+    Edit an existing project
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        start_date = request.POST.get('start_date')
+        target_completion_date = request.POST.get('target_completion_date')
+        
+        if not title:
+            messages.error(request, 'Project title is required.')
+            return redirect('planning:project-edit', project_id=project.id)
+        
+        project.title = title
+        project.description = description
+        project.start_date = start_date if start_date else None
+        project.target_completion_date = target_completion_date if target_completion_date else None
+        project.save()
+        
+        messages.success(request, f'Project "{title}" updated successfully!')
+        return redirect('planning:project-detail', project_id=project.id)
+    
+    context = {
+        'active_tab': 'projects',
+        'project': project,
+        'is_edit': True,
+    }
+    
+    return render(request, 'a_planning/project_form.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_mark_completed_view(request, project_id):
+    """
+    Mark a project as completed
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    
+    try:
+        project.mark_completed()
+        return JsonResponse({
+            'success': True,
+            'status': project.status,
+            'completed_at': project.completed_at.isoformat() if project.completed_at else None
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_pause_view(request, project_id):
+    """
+    Put a project on hold
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    
+    try:
+        project.status = 'on_hold'
+        project.save()
+        return JsonResponse({
+            'success': True,
+            'status': project.status
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_resume_view(request, project_id):
+    """
+    Resume a project that's on hold
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    
+    try:
+        project.status = 'active'
+        project.save()
+        return JsonResponse({
+            'success': True,
+            'status': project.status
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_delete_view(request, project_id):
+    """
+    Delete a project
+    """
+    project = get_object_or_404(Project, id=project_id, user=request.user)
+    
+    try:
+        project_title = project.title
+        project.delete()
+        return JsonResponse({
+            'success': True,
+            'message': f'Project "{project_title}" deleted successfully!'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
 def goal_list_view(request):
     """
     Goal list view with filtering
@@ -447,6 +570,129 @@ def goal_detail_view(request, goal_id):
     }
     
     return render(request, 'a_planning/goal_detail.html', context)
+
+
+@login_required
+def goal_edit_view(request, goal_id):
+    """
+    Edit an existing goal
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        success_criteria = request.POST.get('success_criteria')
+        target_date = request.POST.get('target_date')
+        
+        if not title or not success_criteria or not target_date:
+            messages.error(request, 'Title, success criteria, and target date are required.')
+            return redirect('planning:goal-edit', goal_id=goal.id)
+        
+        goal.title = title
+        goal.description = description
+        goal.success_criteria = success_criteria
+        goal.target_date = target_date
+        goal.save()
+        
+        messages.success(request, f'Goal "{title}" updated successfully!')
+        return redirect('planning:goal-detail', goal_id=goal.id)
+    
+    context = {
+        'active_tab': 'goals',
+        'goal': goal,
+        'is_edit': True,
+    }
+    
+    return render(request, 'a_planning/goal_form.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def goal_mark_achieved_view(request, goal_id):
+    """
+    Mark a goal as achieved
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    try:
+        goal.mark_achieved()
+        return JsonResponse({
+            'success': True,
+            'status': goal.status,
+            'achieved_at': goal.achieved_at.isoformat() if goal.achieved_at else None
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def goal_pause_view(request, goal_id):
+    """
+    Pause a goal
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    try:
+        goal.status = 'paused'
+        goal.save()
+        return JsonResponse({
+            'success': True,
+            'status': goal.status
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def goal_resume_view(request, goal_id):
+    """
+    Resume a paused goal
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    try:
+        goal.status = 'active'
+        goal.save()
+        return JsonResponse({
+            'success': True,
+            'status': goal.status
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def goal_delete_view(request, goal_id):
+    """
+    Delete a goal
+    """
+    goal = get_object_or_404(Goal, id=goal_id, user=request.user)
+    
+    try:
+        goal_title = goal.title
+        goal.delete()
+        return JsonResponse({
+            'success': True,
+            'message': f'Goal "{goal_title}" deleted successfully!'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
 
 
 # HTMX Views for dynamic updates
@@ -545,12 +791,12 @@ def ai_task_summary_view(request):
     summary = ai_service.summarize_tasks(task_list)
     
     if summary:
-        # Create an AI insight record (skip for now to avoid model issues)
-        # AIInsight.objects.create(
-        #     user=request.user,
-        #     content=summary,
-        #     insight_type='productivity_tip'
-        # )
+        # Save the successful response to cache
+        AIResponseCache.save_response(
+            user=request.user,
+            response_type='task_summary',
+            response_content=summary
+        )
         
         return JsonResponse({
             'success': True,
@@ -558,10 +804,25 @@ def ai_task_summary_view(request):
             'task_count': len(task_list)
         })
     else:
-        return JsonResponse({
-            'success': False,
-            'error': 'Failed to generate AI summary. Please check your n8n workflow.'
-        })
+        # Try to get cached response when AI fails
+        cached_response = AIResponseCache.get_cached_response(
+            user=request.user,
+            response_type='task_summary'
+        )
+        
+        if cached_response:
+            return JsonResponse({
+                'success': True,
+                'summary': cached_response.response_content,
+                'task_count': len(task_list),
+                'is_cached': True,
+                'cached_date': cached_response.updated_at.isoformat()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to generate AI summary. Please check your n8n workflow.'
+            })
 
 
 @login_required
@@ -598,12 +859,13 @@ def ai_project_analysis_view(request, project_id):
     analysis = ai_service.analyze_project_progress(project_data, task_list)
     
     if analysis:
-        # Create an AI insight record (skip for now to avoid model issues)
-        # AIInsight.objects.create(
-        #     user=request.user,
-        #     content=analysis,
-        #     insight_type='project_planning'
-        # )
+        # Save the successful response to cache
+        AIResponseCache.save_response(
+            user=request.user,
+            response_type='project_analysis',
+            response_content=analysis,
+            content_object=project
+        )
         
         return JsonResponse({
             'success': True,
@@ -611,10 +873,26 @@ def ai_project_analysis_view(request, project_id):
             'project_title': project.title
         })
     else:
-        return JsonResponse({
-            'success': False,
-            'error': 'Failed to generate AI analysis. Please check your n8n workflow.'
-        })
+        # Try to get cached response when AI fails
+        cached_response = AIResponseCache.get_cached_response(
+            user=request.user,
+            response_type='project_analysis',
+            content_object=project
+        )
+        
+        if cached_response:
+            return JsonResponse({
+                'success': True,
+                'analysis': cached_response.response_content,
+                'project_title': project.title,
+                'is_cached': True,
+                'cached_date': cached_response.updated_at.isoformat()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to generate AI analysis. Please check your n8n workflow.'
+            })
 
 
 @login_required
@@ -670,12 +948,13 @@ def ai_goal_action_plan_view(request, goal_id):
     action_plan = ai_service.generate_goal_action_plan(goal_data)
     
     if action_plan:
-        # Create an AI insight record (skip for now to avoid model issues)
-        # AIInsight.objects.create(
-        #     user=request.user,
-        #     content=action_plan,
-        #     insight_type='goal_analysis'
-        # )
+        # Save the successful response to cache
+        AIResponseCache.save_response(
+            user=request.user,
+            response_type='goal_action_plan',
+            response_content=action_plan,
+            content_object=goal
+        )
         
         return JsonResponse({
             'success': True,
@@ -683,10 +962,26 @@ def ai_goal_action_plan_view(request, goal_id):
             'goal_title': goal.title
         })
     else:
-        return JsonResponse({
-            'success': False,
-            'error': 'Failed to generate action plan. Please check your n8n workflow.'
-        })
+        # Try to get cached response when AI fails
+        cached_response = AIResponseCache.get_cached_response(
+            user=request.user,
+            response_type='goal_action_plan',
+            content_object=goal
+        )
+        
+        if cached_response:
+            return JsonResponse({
+                'success': True,
+                'action_plan': cached_response.response_content,
+                'goal_title': goal.title,
+                'is_cached': True,
+                'cached_date': cached_response.updated_at.isoformat()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to generate action plan. Please check your n8n workflow.'
+            })
 
 
 @login_required
@@ -731,12 +1026,12 @@ def ai_productivity_insights_view(request):
     insights = ai_service.analyze_productivity_patterns(user_data)
     
     if insights:
-        # Create an AI insight record (skip for now to avoid model issues)
-        # AIInsight.objects.create(
-        #     user=request.user,
-        #     content=insights,
-        #     insight_type='productivity_tip'
-        # )
+        # Save the successful response to cache
+        AIResponseCache.save_response(
+            user=request.user,
+            response_type='productivity_insights',
+            response_content=insights
+        )
         
         return JsonResponse({
             'success': True,
@@ -744,7 +1039,22 @@ def ai_productivity_insights_view(request):
             'productivity_data': user_data
         })
     else:
-        return JsonResponse({
-            'success': False,
-            'error': 'Failed to generate productivity insights. Please check your n8n workflow.'
-        })
+        # Try to get cached response when AI fails
+        cached_response = AIResponseCache.get_cached_response(
+            user=request.user,
+            response_type='productivity_insights'
+        )
+        
+        if cached_response:
+            return JsonResponse({
+                'success': True,
+                'insights': cached_response.response_content,
+                'productivity_data': user_data,
+                'is_cached': True,
+                'cached_date': cached_response.updated_at.isoformat()
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to generate productivity insights. Please check your n8n workflow.'
+            })

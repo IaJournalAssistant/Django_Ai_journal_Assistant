@@ -35,11 +35,21 @@ urlpatterns = [
     path('projects/', views.project_list_view, name='project-list'),
     path('projects/create/', views.project_create_view, name='project-create'),
     path('projects/<int:project_id>/', views.project_detail_view, name='project-detail'),
+    path('projects/<int:project_id>/edit/', views.project_edit_view, name='project-edit'),
+    path('projects/<int:project_id>/mark-completed/', views.project_mark_completed_view, name='project-mark-completed'),
+    path('projects/<int:project_id>/pause/', views.project_pause_view, name='project-pause'),
+    path('projects/<int:project_id>/resume/', views.project_resume_view, name='project-resume'),
+    path('projects/<int:project_id>/delete/', views.project_delete_view, name='project-delete'),
     
     # Goal URLs
     path('goals/', views.goal_list_view, name='goal-list'),
     path('goals/create/', views.goal_create_view, name='goal-create'),
     path('goals/<int:goal_id>/', views.goal_detail_view, name='goal-detail'),
+    path('goals/<int:goal_id>/edit/', views.goal_edit_view, name='goal-edit'),
+    path('goals/<int:goal_id>/mark-achieved/', views.goal_mark_achieved_view, name='goal-mark-achieved'),
+    path('goals/<int:goal_id>/pause/', views.goal_pause_view, name='goal-pause'),
+    path('goals/<int:goal_id>/resume/', views.goal_resume_view, name='goal-resume'),
+    path('goals/<int:goal_id>/delete/', views.goal_delete_view, name='goal-delete'),
     
     # HTMX endpoints for dynamic updates
     path('htmx/tasks/<int:task_id>/toggle-status/', views.task_toggle_status, name='task-toggle-status'),

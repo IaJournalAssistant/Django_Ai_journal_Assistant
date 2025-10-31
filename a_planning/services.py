@@ -57,7 +57,30 @@ class N8nAIService:
             
         # Handle different response structures from n8n
         if isinstance(response, dict):
-            # Special handling for OpenAI format
+            # Priority 1: Check for 'output' field first (as requested)
+            if 'output' in response and response['output']:
+                content = response['output']
+                if isinstance(content, str):
+                    return content.strip()
+                elif isinstance(content, dict):
+                    # If output is a dict, try to extract text from common fields
+                    for nested_field in ['text', 'content', 'message', 'value']:
+                        if nested_field in content:
+                            return str(content[nested_field]).strip()
+                    # If no nested text field, convert to string
+                    return str(content).strip()
+                elif isinstance(content, list) and len(content) > 0:
+                    # Handle list content
+                    first_item = content[0]
+                    if isinstance(first_item, dict):
+                        for nested_field in ['text', 'content', 'message', 'output']:
+                            if nested_field in first_item:
+                                return str(first_item[nested_field]).strip()
+                    return str(first_item).strip()
+                else:
+                    return str(content).strip()
+            
+            # Priority 2: Special handling for OpenAI format
             if 'choices' in response and isinstance(response['choices'], list) and len(response['choices']) > 0:
                 choice = response['choices'][0]
                 if isinstance(choice, dict) and 'message' in choice:
@@ -65,14 +88,14 @@ class N8nAIService:
                     if isinstance(message, dict) and 'content' in message:
                         return str(message['content']).strip()
             
-            # Special handling for Claude format
+            # Priority 3: Special handling for Claude format
             if 'content' in response and isinstance(response['content'], list) and len(response['content']) > 0:
                 content_item = response['content'][0]
                 if isinstance(content_item, dict) and 'text' in content_item:
                     return str(content_item['text']).strip()
             
-            # Try common response field names in order of preference
-            for field in ['message', 'response', 'text', 'content', 'result', 'output', 'summary', 'analysis', 'insights', 'suggestions', 'action_plan', 'plan']:
+            # Priority 4: Try other common response field names
+            for field in ['message', 'response', 'text', 'content', 'result', 'summary', 'analysis', 'insights', 'suggestions', 'action_plan', 'plan']:
                 if field in response and response[field]:
                     content = response[field]
                     # Handle nested structures

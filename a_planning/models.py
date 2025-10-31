@@ -280,3 +280,97 @@ class AIInsight(models.Model):
         """Mark insight as applied"""
         self.is_applied = True
         self.save()
+
+class AIResponseCache(models.Model):
+    """Cache for AI responses to show previous results when AI is unavailable"""
+    RESPONSE_TYPE_CHOICES = [
+        ('task_summary', 'Task Summary'),
+        ('project_analysis', 'Project Analysis'),
+        ('goal_action_plan', 'Goal Action Plan'),
+        ('productivity_insights', 'Productivity Insights'),
+        ('task_breakdown', 'Task Breakdown'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_response_cache')
+    response_type = models.CharField(max_length=50, choices=RESPONSE_TYPE_CHOICES)
+    
+    # Optional reference to specific object (project, goal, etc.)
+    content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    
+    # AI response data
+    response_content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Metadata
+    is_valid = models.BooleanField(default=True)  # Mark as invalid when data changes significantly
+    
+    class Meta:
+        ordering = ['-updated_at']
+        unique_together = ['user', 'response_type', 'content_type', 'object_id']
+        
+    def __str__(self):
+        if self.content_object:
+            return f"{self.get_response_type_display()} for {self.content_object} ({self.user.username})"
+        return f"{self.get_response_type_display()} for {self.user.username}"
+    
+    @classmethod
+    def get_cached_response(cls, user, response_type, content_object=None):
+        """Get the most recent cached response for a user and type"""
+        try:
+            cache_filter = {
+                'user': user,
+                'response_type': response_type,
+                'is_valid': True
+            }
+            
+            if content_object:
+                cache_filter.update({
+                    'content_type': ContentType.objects.get_for_model(content_object),
+                    'object_id': content_object.id
+                })
+            else:
+                cache_filter.update({
+                    'content_type__isnull': True,
+                    'object_id__isnull': True
+                })
+            
+            return cls.objects.filter(**cache_filter).first()
+        except cls.DoesNotExist:
+            return None
+    
+    @classmethod
+    def save_response(cls, user, response_type, response_content, content_object=None):
+        """Save or update a cached AI response"""
+        cache_data = {
+            'user': user,
+            'response_type': response_type,
+            'response_content': response_content,
+            'is_valid': True
+        }
+        
+        if content_object:
+            cache_data.update({
+                'content_type': ContentType.objects.get_for_model(content_object),
+                'object_id': content_object.id
+            })
+        
+        # Use update_or_create to avoid duplicates
+        obj, created = cls.objects.update_or_create(
+            user=user,
+            response_type=response_type,
+            content_type=cache_data.get('content_type'),
+            object_id=cache_data.get('object_id'),
+            defaults={
+                'response_content': response_content,
+                'is_valid': True
+            }
+        )
+        return obj
+    
+    def invalidate(self):
+        """Mark this cached response as invalid"""
+        self.is_valid = False
+        self.save()
