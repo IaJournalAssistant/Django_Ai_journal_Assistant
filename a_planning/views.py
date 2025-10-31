@@ -8,9 +8,18 @@ from django.db.models import Q, Count, Avg
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import Task, Project, Goal, TaskComment, AIInsight, AIResponseCache
 from .services import ai_service
+from .ai_models import (
+    generate_task_insights, 
+    generate_project_analysis, 
+    generate_goal_action_plan, 
+    generate_productivity_insights
+)
 
 
 @login_required
@@ -787,11 +796,11 @@ def ai_task_summary_view(request):
         }
         task_list.append(task_data)
     
-    # Get AI summary from n8n
+    # Try n8n first, then fallback to local AI, then cache
     summary = ai_service.summarize_tasks(task_list)
     
     if summary:
-        # Save the successful response to cache
+        # Save the successful n8n response to cache
         AIResponseCache.save_response(
             user=request.user,
             response_type='task_summary',
@@ -801,10 +810,31 @@ def ai_task_summary_view(request):
         return JsonResponse({
             'success': True,
             'summary': summary,
-            'task_count': len(task_list)
+            'task_count': len(task_list),
+            'source': 'n8n'
         })
     else:
-        # Try to get cached response when AI fails
+        # Try local AI model as fallback
+        try:
+            local_summary = generate_task_insights(task_list)
+            if local_summary:
+                # Save local AI response to cache
+                AIResponseCache.save_response(
+                    user=request.user,
+                    response_type='task_summary',
+                    response_content=local_summary
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'summary': local_summary,
+                    'task_count': len(task_list),
+                    'source': 'local_ai'
+                })
+        except Exception as e:
+            logger.error(f"Local AI failed: {e}")
+        
+        # Finally, try cached response
         cached_response = AIResponseCache.get_cached_response(
             user=request.user,
             response_type='task_summary'
@@ -821,7 +851,7 @@ def ai_task_summary_view(request):
         else:
             return JsonResponse({
                 'success': False,
-                'error': 'Failed to generate AI summary. Please check your n8n workflow.'
+                'error': 'AI services unavailable. Please try again later.'
             })
 
 
@@ -855,11 +885,11 @@ def ai_project_analysis_view(request, project_id):
         }
         task_list.append(task_data)
     
-    # Get AI analysis from n8n
+    # Try n8n first, then fallback to local AI, then cache
     analysis = ai_service.analyze_project_progress(project_data, task_list)
     
     if analysis:
-        # Save the successful response to cache
+        # Save the successful n8n response to cache
         AIResponseCache.save_response(
             user=request.user,
             response_type='project_analysis',
@@ -870,10 +900,32 @@ def ai_project_analysis_view(request, project_id):
         return JsonResponse({
             'success': True,
             'analysis': analysis,
-            'project_title': project.title
+            'project_title': project.title,
+            'source': 'n8n'
         })
     else:
-        # Try to get cached response when AI fails
+        # Try local AI model as fallback
+        try:
+            local_analysis = generate_project_analysis(project_data, task_list)
+            if local_analysis:
+                # Save local AI response to cache
+                AIResponseCache.save_response(
+                    user=request.user,
+                    response_type='project_analysis',
+                    response_content=local_analysis,
+                    content_object=project
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'analysis': local_analysis,
+                    'project_title': project.title,
+                    'source': 'local_ai'
+                })
+        except Exception as e:
+            logger.error(f"Local AI failed: {e}")
+        
+        # Finally, try cached response
         cached_response = AIResponseCache.get_cached_response(
             user=request.user,
             response_type='project_analysis',
@@ -891,7 +943,7 @@ def ai_project_analysis_view(request, project_id):
         else:
             return JsonResponse({
                 'success': False,
-                'error': 'Failed to generate AI analysis. Please check your n8n workflow.'
+                'error': 'AI services unavailable. Please try again later.'
             })
 
 
