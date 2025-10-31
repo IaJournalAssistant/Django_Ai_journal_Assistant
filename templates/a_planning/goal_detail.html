@@ -70,10 +70,10 @@
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-medium text-gray-700">Current Progress</span>
-                        <span class="text-lg font-bold text-pink-600">{{ goal.progress_percentage }}%</span>
+                        <span class="text-lg font-bold text-pink-600" data-progress>{{ goal.progress_percentage }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-gradient-to-r from-pink-500 to-rose-500 h-4 rounded-full transition-all" style="width: {{ goal.progress_percentage }}%"></div>
+                        <div class="bg-gradient-to-r from-pink-500 to-rose-500 h-4 rounded-full transition-all" data-progress-bar style="width: {{ goal.progress_percentage }}%"></div>
                     </div>
                     <div class="mt-2">
                         <span class="text-sm px-3 py-1 rounded-full font-medium {% if goal.progress_percentage >= 75 %}bg-green-100 text-green-700{% elif goal.progress_percentage >= 50 %}bg-blue-100 text-blue-700{% elif goal.progress_percentage >= 25 %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-700{% endif %}">
@@ -85,7 +85,7 @@
                 <!-- Update Progress Form -->
                 <div class="bg-gray-50 rounded-lg p-4">
                     <h3 class="font-medium text-gray-900 mb-3">Update Progress</h3>
-                    <form method="post" action="{% url 'planning:goal-update-progress' goal.id %}" class="flex items-center gap-3">
+                    <form id="progress-form" class="flex items-center gap-3">
                         {% csrf_token %}
                         <input type="range" name="percentage" min="0" max="100" value="{{ goal.progress_percentage }}" 
                                class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
@@ -94,7 +94,7 @@
                                class="w-16 rounded border-gray-300 text-center" id="percentage-input"
                                oninput="document.querySelector('input[type=range]').value = this.value">
                         <span class="text-sm text-gray-600">%</span>
-                        <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm transition-all">
+                        <button type="button" onclick="updateGoalProgress({{ goal.id }})" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm transition-all">
                             Update
                         </button>
                     </form>
@@ -114,11 +114,11 @@
                         <svg class="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
                             <circle cx="50" cy="50" r="40" stroke="#e5e7eb" stroke-width="8" fill="none"/>
                             <circle cx="50" cy="50" r="40" stroke="#ec4899" stroke-width="8" fill="none" 
-                                    stroke-dasharray="{{ goal.progress_percentage|floatformat:0 }} 100" 
+                                    data-progress-circle stroke-dasharray="{{ goal.progress_percentage|floatformat:0 }}, 100" 
                                     stroke-linecap="round" class="transition-all duration-300"/>
                         </svg>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-xl font-bold text-gray-900">{{ goal.progress_percentage }}%</span>
+                            <span class="text-xl font-bold text-gray-900" data-progress>{{ goal.progress_percentage }}%</span>
                         </div>
                     </div>
                 </div>
@@ -160,26 +160,26 @@
                     </button>
                     
                     {% if goal.status != 'achieved' and goal.progress_percentage < 100 %}
-                    <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all">
+                    <button onclick="markGoalAsAchieved({{ goal.id }})" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all">
                         Mark as Achieved
                     </button>
                     {% endif %}
                     
                     {% if goal.status == 'active' %}
-                    <button class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg transition-all">
+                    <button onclick="pauseGoal({{ goal.id }})" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg transition-all">
                         Pause Goal
                     </button>
                     {% elif goal.status == 'paused' %}
-                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all">
+                    <button onclick="resumeGoal({{ goal.id }})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all">
                         Resume Goal
                     </button>
                     {% endif %}
                     
-                    <button class="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-lg transition-all">
+                    <a href="{% url 'planning:goal-edit' goal.id %}" class="w-full bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded-lg transition-all text-center block">
                         Edit Goal
-                    </button>
+                    </a>
                     
-                    <button class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-all">
+                    <button onclick="deleteGoal({{ goal.id }})" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-all">
                         Delete Goal
                     </button>
                 </div>
@@ -230,12 +230,21 @@ function generateGoalActionPlan(goalId) {
     .then(data => {
         document.getElementById('ai-modal-loading').classList.add('hidden');
         if (data.success) {
+            // Use the same formatting function as dashboard
+            let formattedContent = formatAIContent(data.action_plan);
+            const cachedIndicator = data.is_cached ? 
+                `<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs ml-2">📁 Cached (${new Date(data.cached_date).toLocaleDateString()})</span>` : 
+                `<span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs ml-2">🔄 Live</span>`;
+            
             document.getElementById('ai-modal-content').innerHTML = `
                 <div class="bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg p-4 mb-4">
-                    <h4 class="font-bold text-pink-800 mb-2">🎯 AI Action Plan for "${data.goal_title}"</h4>
+                    <h4 class="font-bold text-pink-800 mb-2 flex items-center">
+                        🎯 AI Action Plan for "${data.goal_title}"
+                        ${cachedIndicator}
+                    </h4>
                 </div>
                 <div class="prose prose-sm max-w-none">
-                    <p class="leading-relaxed whitespace-pre-line">${data.action_plan}</p>
+                    ${formattedContent}
                 </div>
             `;
         } else {
@@ -260,6 +269,191 @@ function generateGoalActionPlan(goalId) {
     });
 }
 
+function updateGoalProgress(goalId) {
+    const percentage = document.getElementById('percentage-input').value;
+    
+    fetch(`/planning/htmx/goals/${goalId}/update-progress/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `percentage=${percentage}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.progress_percentage !== undefined) {
+            // Update progress displays
+            document.querySelectorAll('[data-progress]').forEach(el => {
+                el.textContent = data.progress_percentage + '%';
+            });
+            
+            // Update progress bars
+            document.querySelectorAll('[data-progress-bar]').forEach(el => {
+                el.style.width = data.progress_percentage + '%';
+            });
+            
+            // Update circle progress
+            document.querySelectorAll('[data-progress-circle]').forEach(el => {
+                el.setAttribute('stroke-dasharray', `${data.progress_percentage}, 100`);
+            });
+            
+            // Show success message
+            showNotification('Progress updated successfully!', 'success');
+            
+            // Reload page if goal was achieved
+            if (data.status === 'achieved') {
+                setTimeout(() => location.reload(), 1000);
+            }
+        } else {
+            showNotification('Failed to update progress', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Network error: ' + error.message, 'error');
+    });
+}
+
+function markGoalAsAchieved(goalId) {
+    if (confirm('Are you sure you want to mark this goal as achieved?')) {
+        fetch(`/planning/goals/${goalId}/mark-achieved/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Goal marked as achieved!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.error || 'Failed to mark goal as achieved', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Network error: ' + error.message, 'error');
+        });
+    }
+}
+
+function pauseGoal(goalId) {
+    if (confirm('Are you sure you want to pause this goal?')) {
+        fetch(`/planning/goals/${goalId}/pause/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Goal paused successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.error || 'Failed to pause goal', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Network error: ' + error.message, 'error');
+        });
+    }
+}
+
+function resumeGoal(goalId) {
+    if (confirm('Are you sure you want to resume this goal?')) {
+        fetch(`/planning/goals/${goalId}/resume/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Goal resumed successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.error || 'Failed to resume goal', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Network error: ' + error.message, 'error');
+        });
+    }
+}
+
+function deleteGoal(goalId) {
+    if (confirm('Are you sure you want to delete this goal? This action cannot be undone.')) {
+        fetch(`/planning/goals/${goalId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Goal deleted successfully!', 'success');
+                setTimeout(() => window.location.href = '/planning/goals/', 1000);
+            } else {
+                showNotification(data.error || 'Failed to delete goal', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Network error: ' + error.message, 'error');
+        });
+    }
+}
+
+function formatAIContent(content) {
+    // Check if content already contains HTML tags
+    const hasHtmlTags = /<[^>]+>/.test(content);
+    
+    if (hasHtmlTags) {
+        return content;
+    } else {
+        // Apply basic formatting for plain text
+        return content
+            .replace(/^([A-Z][^:]+):$/gm, '<h4 class="font-semibold text-gray-800 mt-4 mb-2 border-b border-gray-200 pb-1">$1</h4>')
+            .replace(/^\*\*([^*]+)\*\*$/gm, '<h4 class="font-semibold text-gray-800 mt-4 mb-2 border-b border-gray-200 pb-1">$1</h4>')
+            .replace(/^- (.+)$/gm, '<div class="mb-1 flex items-start gap-2"><span class="text-gray-500 mt-1">•</span><span class="text-gray-700">$1</span></div>')
+            .replace(/^(\d+)\. (.+)$/gm, '<div class="mb-1 flex items-start gap-2"><span class="font-semibold text-gray-800 min-w-[20px]">$1.</span><span class="text-gray-700">$2</span></div>')
+            .replace(/"([^"]+)"/g, '<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded font-medium">"$1"</span>')
+            .replace(/\n/g, '<br>');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all transform translate-x-full ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
 function closeAIModal() {
     document.getElementById('ai-modal').classList.add('hidden');
 }
@@ -272,7 +466,6 @@ function getCookie(name) {
             const cookie = cookies[i].trim();
             if (cookie.substring(0, name.length + 1) === (name + '=')) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
             }
         }
     }

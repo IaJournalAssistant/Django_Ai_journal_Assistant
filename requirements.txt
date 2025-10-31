@@ -15,45 +15,22 @@ django-filter==24.3
 # Database / Security
 psycopg[binary]
 fido2
-
-psycopg[binary]
 requests
-
 
 # AI Analysis Engine Dependencies
 numpy>=1.24.0
 pandas>=2.0.0
 scipy>=1.10.0
-requests>=2.28.0
 
 # Environment variables
 python-dotenv>=1.0.0
-pip install pillow djangorestframework django-cors-headers pytesseract torch torchvision torchaudio openai-whisper transformers
-OCR et Analyse d’images
 
-Tesseract OCR (pour extraire le texte des images)
-
-Installer Tesseract : https://github.com/tesseract-ocr/tesseract
-
-Ajouter tesseract.exe au PATH.
-
-Installer la bibliothèque Python : pip install pytesseract
-Analyse de sentiment
-
-Tu peux utiliser TextBlob ou transformers :
-
-pip install textblob
-python -m textblob.download_corpora
-# ou si tu veux un modèle Hugging Face pour sentiment :
-pip install transformers torch
-
-*Analyse d’émotion sur image
-
-Pour l’instant tu sembles utiliser un script personnalisé (analyze_emotion).
-
-Si tu veux Deep Learning :
-
-pip install tensorflow keras
-# ou pour PyTorch
-pip install torch torchvision torchaudio
-
+# Additional packages for speech and AI features
+django-cors-headers>=4.0.0
+pytesseract>=0.3.10
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+openai-whisper>=20231117
+transformers>=4.30.0
+textblob>=0.17.1
